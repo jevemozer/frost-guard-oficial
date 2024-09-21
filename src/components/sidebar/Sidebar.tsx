@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import Image from 'next/image';
 import { Avatar } from '@/components/ui/avatar';
-import { Home, Settings, LogOut, Menu, Calendar, FileText, DollarSign, User } from 'lucide-react'; // Adicione o ícone User
+import { Home, Settings, LogOut, Menu, Calendar, FileText, DollarSign, User } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import md5 from 'md5';
@@ -51,7 +51,7 @@ const Sidebar = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push('/login'); // Redirecionar para a página de login
+    router.push('/login');
   };
 
   const toggleSidebar = () => {
@@ -70,7 +70,7 @@ const Sidebar = () => {
       <aside
         className={`${
           isOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0 transform transition-transform fixed lg:static top-0 left-0 w-64 h-screen bg-emerald-800 text-white p-4 flex flex-col justify-between`}
+        } lg:translate-x-0 transform transition-transform fixed lg:static top-0 left-0 w-64 h-screen bg-emerald-800 text-white p-4 flex flex-col justify-between z-50`} // Adicionando z-50
       >
         <div>
           <div className="flex flex-col items-center justify-center p-4">
@@ -118,7 +118,7 @@ const Sidebar = () => {
               </li>
               <li className="py-4 hover:bg-emerald-700 rounded">
                 <Link href="/cadastros">
-                  <User className="inline mr-2" /> {/* Alterado para User */}
+                  <User className="inline mr-2" />
                   Cadastros
                 </Link>
               </li>
@@ -149,7 +149,7 @@ const Sidebar = () => {
       {isOpen && (
         <div
           onClick={toggleSidebar}
-          className="fixed inset-0 bg-black opacity-50 lg:hidden z-40"
+          className="fixed inset-0 bg-black opacity-50 lg:hidden z-40 cursor-pointer pointer-events-auto" // Ajustando pointer-events
         />
       )}
     </>

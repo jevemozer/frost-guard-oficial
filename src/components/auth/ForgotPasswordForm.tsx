@@ -35,7 +35,7 @@ export function ForgotPasswordForm() {
 
   return (
     <Card className="mx-auto max-w-sm shadow-lg border border-gray-200 rounded-lg">
-      <CardHeader>
+      <CardHeader className="items-center justify-center">
         <CardTitle className="text-2xl">Recuperar Senha</CardTitle>
         <CardDescription>
           Insira seu e-mail abaixo para redefinir sua senha.

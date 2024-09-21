@@ -1,3 +1,5 @@
+// src/components/auth/ResetPasswordForm.tsx
+
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -9,18 +11,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 
-// Definição das props
+
+// Definição das props para aceitar accessToken
 interface ResetPasswordFormProps {
   accessToken: string;
 }
 
-export const ResetPasswordForm: FC<ResetPasswordFormProps> = ({ accessToken }) => {
+export const ResetPasswordForm: FC<ResetPasswordFormProps> = ({ }) => {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,10 +38,9 @@ export const ResetPasswordForm: FC<ResetPasswordFormProps> = ({ accessToken }) =
       return;
     }
 
-    // Atualizar a senha no Supabase com o token de recuperação
+    // Atualizar a senha no Supabase usando o token de recuperação
     const { error: updateError } = await supabase.auth.updateUser({
       password,
-      access_token: accessToken,  // Usar o accessToken passado como prop
     });
 
     if (updateError) {
@@ -54,7 +57,7 @@ export const ResetPasswordForm: FC<ResetPasswordFormProps> = ({ accessToken }) =
 
   return (
     <Card className="mx-auto max-w-sm shadow-lg border border-gray-200 rounded-lg">
-      <CardHeader>
+      <CardHeader className="items-center justify-center">
         <CardTitle className="text-2xl">Redefinir Senha</CardTitle>
         <CardDescription>Insira sua nova senha abaixo.</CardDescription>
       </CardHeader>

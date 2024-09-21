@@ -81,3 +81,7 @@ export interface Payment {
   status: string;
   created_at: Date;
 }
+
+export interface ResetPasswordFormProps {
+  accessToken: string;
+}

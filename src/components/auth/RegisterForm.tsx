@@ -53,7 +53,7 @@ export function RegisterForm() {
 
   return (
     <Card className="mx-auto max-w-sm shadow-lg border border-gray-200 rounded-lg">
-      <CardHeader>
+      <CardHeader className="items-center justify-center">
         <CardTitle className="text-2xl">Cadastrar</CardTitle>
         <CardDescription>
           Preencha os campos abaixo para criar sua conta.

@@ -20,7 +20,10 @@ export function ForgotPasswordForm() {
     setError("");
     setSuccess("");
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`, // Adicionando o redirectTo
+    });
+
     if (error) {
       setError(error.message);
     } else {

@@ -1,9 +1,7 @@
-// src/components/auth/ResetPasswordForm.tsx
-
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, FC } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,11 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 
+// Definição das props
 interface ResetPasswordFormProps {
-  accessToken: string; // Adicionando a propriedade accessToken
+  accessToken: string;
 }
 
-export const ResetPasswordForm = ({ accessToken }: ResetPasswordFormProps) => {
+export const ResetPasswordForm: FC<ResetPasswordFormProps> = ({ accessToken }) => {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -35,10 +34,10 @@ export const ResetPasswordForm = ({ accessToken }: ResetPasswordFormProps) => {
       return;
     }
 
-    // Redefina a senha
+    // Atualizar a senha no Supabase com o token de recuperação
     const { error: updateError } = await supabase.auth.updateUser({
       password,
-      access_token: accessToken, // Incluindo o accessToken
+      access_token: accessToken,  // Usar o accessToken passado como prop
     });
 
     if (updateError) {

@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { AuthProvider } from '@/lib/contexts/AuthContext';
+import { AuthProvider } from '@/lib/contexts/AuthContext'; 
+import { LayoutContent } from '@/components/LayoutContent'; 
 
-// Carregamento das fontes locais
+export const metadata: Metadata = {
+  title: "Frost Guard",
+  description: "Controle de manutenções para equipamentos de refrigeração",
+};
+
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -15,12 +20,6 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
-// Metadados do projeto
-export const metadata: Metadata = {
-  title: "Frost Guard",
-  description: "Controle de manutenções para equipamentos de refrigeração",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,10 +27,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {/* Provider de autenticação para gerenciamento de sessão do usuário */}
+      <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}>
         <AuthProvider>
-          {children}
+          <LayoutContent>{children}</LayoutContent>
         </AuthProvider>
       </body>
     </html>

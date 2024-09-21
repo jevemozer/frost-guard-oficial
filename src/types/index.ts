@@ -82,6 +82,13 @@ export interface Payment {
   created_at: Date;
 }
 
+export interface Profile {
+  id: string; // Referência ao ID do usuário
+  full_name: string;
+  email: string;
+  avatar_url?: string; // URL do avatar (opcional)
+}
+
 export interface ResetPasswordFormProps {
   accessToken: string;
 }

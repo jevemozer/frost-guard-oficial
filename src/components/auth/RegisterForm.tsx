@@ -7,9 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import React, { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation"; // Importando useRouter
+import md5 from 'md5'; // Importando md5 para gerar o hash do e-mail
 
 export function RegisterForm() {
-  const [name, setName] = useState("");
+  const router = useRouter(); // Inicializando useRouter
+  const [fullName, setFullName] = useState(""); // Renomeando para fullName
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -34,18 +37,39 @@ export function RegisterForm() {
       return;
     }
 
-    const { error: signupError } = await supabase.auth.signUp({
+    const { data, error: signupError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { name, avatar_url: "" }, // Adicione o URL do avatar depois
+        data: { full_name: fullName, avatar_url: "" }, // URL do avatar será definida depois
       },
     });
 
     if (signupError) {
       setError(signupError.message);
     } else {
-      setSuccess("Cadastro realizado com sucesso!");
+      // Verificando se data.user não é null
+      if (data.user) {
+        // Gerar uma URL de avatar a partir do e-mail usando Gravatar
+        const gravatarHash = md5(email.trim().toLowerCase());
+        const avatarUrl = `https://www.gravatar.com/avatar/${gravatarHash}?d=identicon`;
+
+        // Salvar o perfil na tabela profile
+        const { error: profileError } = await supabase
+          .from('profile') // Alterando para a tabela correta
+          .insert([{ id: data.user.id, full_name: fullName, email, avatar_url: avatarUrl }]); // Adicionando a URL do avatar
+
+        if (profileError) {
+          setError("Erro ao criar perfil: " + profileError.message);
+        } else {
+          setSuccess("Cadastro realizado com sucesso!");
+          setTimeout(() => {
+            router.push("/login"); // Redireciona para a página de login após 2 segundos
+          }, 2000);
+        }
+      } else {
+        setError("Erro ao obter informações do usuário.");
+      }
     }
 
     setLoading(false);
@@ -68,8 +92,8 @@ export function RegisterForm() {
               type="text"
               placeholder="Seu Nome"
               required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
             />
           </div>
           <div className="grid gap-2">

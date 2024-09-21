@@ -1,5 +1,3 @@
-// Sidebar.tsx
-
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/contexts/AuthContext';
@@ -34,7 +32,11 @@ const Sidebar = () => {
         }
 
         setAvatarUrl(data?.avatar_url || null);
-        setFullName(data?.full_name || user?.email?.split('@')[0] || 'Usuário');
+        
+        // Ajuste para pegar apenas o primeiro nome
+        const name = data?.full_name || user?.email?.split('@')[0] || 'Usuário';
+        const firstName = name.split(' ')[0]; // Pega o primeiro nome
+        setFullName(firstName.charAt(0).toUpperCase() + firstName.slice(1)); // Formata a primeira letra
       }
     };
 
@@ -70,7 +72,7 @@ const Sidebar = () => {
       <aside
         className={`${
           isOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0 transform transition-transform fixed lg:static top-0 left-0 w-64 h-screen bg-emerald-800 text-white p-4 flex flex-col justify-between z-50`} // Adicionando z-50
+        } lg:translate-x-0 transform transition-transform fixed lg:static top-0 left-0 w-64 h-screen bg-emerald-800 text-white p-4 flex flex-col justify-between z-50`}
       >
         <div>
           <div className="flex flex-col items-center justify-center p-4">
@@ -87,7 +89,7 @@ const Sidebar = () => {
             ) : (
               <Avatar className="w-16 h-16 bg-emerald-700 flex items-center justify-center rounded-full">
                 <span className="text-2xl text-white">
-                  {fullName?.charAt(0)?.toUpperCase()}
+                  {fullName?.charAt(0)} {/* Apenas a primeira letra do primeiro nome */}
                 </span>
               </Avatar>
             )}
@@ -99,7 +101,7 @@ const Sidebar = () => {
           <nav className="mt-4">
             <ul>
               <li className="py-4 hover:bg-emerald-700 rounded">
-                <Link href="/">
+                <Link href="/dashboard">
                   <Home className="inline mr-2" />
                   Dashboard
                 </Link>
@@ -138,7 +140,7 @@ const Sidebar = () => {
           </nav>
         </div>
 
-        <div className="py-4 hover:bg-emerald-700 rounded">
+        <div className="py-2 hover:bg-emerald-700 rounded">
           <Button onClick={handleLogout} className="w-full text-left flex items-center">
             <LogOut className="inline mr-2" />
             Sair
@@ -149,7 +151,7 @@ const Sidebar = () => {
       {isOpen && (
         <div
           onClick={toggleSidebar}
-          className="fixed inset-0 bg-black opacity-50 lg:hidden z-40 cursor-pointer pointer-events-auto" // Ajustando pointer-events
+          className="fixed inset-0 bg-black opacity-50 lg:hidden z-40 cursor-pointer pointer-events-auto"
         />
       )}
     </>

@@ -14,9 +14,9 @@ export const LayoutContent = ({ children }: { children: React.ReactNode }) => {
   const shouldRenderSidebar = user && pagesWithSidebar.includes(pathname); // Verificando se o sidebar deve ser exibido
 
   return (
-    <div className="flex">
+    <div className={`flex min-h-screen bg-background text-foreground`}>
       {shouldRenderSidebar && <Sidebar />} {/* Renderiza o Sidebar se o usuário estiver logado e na página correta */}
-      <main className={`flex-1 ${shouldRenderSidebar ? 'pl-64' : ''}`}> {/* Adiciona padding se o Sidebar estiver visível */}
+      <main className={`flex-1 p-4 ${shouldRenderSidebar ? 'pl-4 pt-10' : ''}`}> {/* Adiciona padding se o Sidebar estiver visível */}
         {children}
       </main>
     </div>

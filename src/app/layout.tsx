@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from '@/lib/contexts/AuthContext'; 
-import { LayoutContent } from '@/components/LayoutContent'; 
+import { LayoutContent } from '@/components/LayoutContent';
+import { ThemeProvider } from "@/components/theme/ThemeProvider";  
+import { ModeToggle } from "@/components/theme/ModeToggle";  // Importando o ModeToggle
 
 export const metadata: Metadata = {
   title: "Frost Guard",
@@ -27,9 +29,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased bg-background text-foreground`}>
         <AuthProvider>
-          <LayoutContent>{children}</LayoutContent>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+              {/* Botão de alternância de tema com posicionamento absoluto */}
+              <div className="fixed top-4 right-4 z-50">
+                <ModeToggle /> {/* Botão de alternar tema */}
+              </div>
+              <LayoutContent>{children}</LayoutContent>
+               </ThemeProvider>
         </AuthProvider>
       </body>
     </html>

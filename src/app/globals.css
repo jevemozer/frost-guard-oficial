@@ -17,7 +17,7 @@
   --emerald-900: #14532d;
 }
 
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
     --background: #ffffff;
     --foreground: #171717;

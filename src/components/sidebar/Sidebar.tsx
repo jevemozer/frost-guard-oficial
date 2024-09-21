@@ -32,11 +32,9 @@ const Sidebar = () => {
         }
 
         setAvatarUrl(data?.avatar_url || null);
-        
-        // Ajuste para pegar apenas o primeiro nome
         const name = data?.full_name || user?.email?.split('@')[0] || 'Usuário';
-        const firstName = name.split(' ')[0]; // Pega o primeiro nome
-        setFullName(firstName.charAt(0).toUpperCase() + firstName.slice(1)); // Formata a primeira letra
+        const firstName = name.split(' ')[0];
+        setFullName(firstName.charAt(0).toUpperCase() + firstName.slice(1));
       }
     };
 
@@ -64,7 +62,7 @@ const Sidebar = () => {
     <>
       <Button
         onClick={toggleSidebar}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-emerald-700 text-white rounded-md"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-emerald-700 text-primary rounded-md"
       >
         <Menu />
       </Button>
@@ -72,7 +70,7 @@ const Sidebar = () => {
       <aside
         className={`${
           isOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0 transform transition-transform fixed lg:static top-0 left-0 w-64 h-screen bg-emerald-800 text-white p-4 flex flex-col justify-between z-50`}
+        } lg:translate-x-0 transform transition-transform fixed lg:static top-0 left-0 w-64 h-screen bg-emerald-800 text-primary p-4 flex flex-col justify-between z-50 shadow-lg`}
       >
         <div>
           <div className="flex flex-col items-center justify-center p-4">
@@ -88,49 +86,49 @@ const Sidebar = () => {
               </Avatar>
             ) : (
               <Avatar className="w-16 h-16 bg-emerald-700 flex items-center justify-center rounded-full">
-                <span className="text-2xl text-white">
-                  {fullName?.charAt(0)} {/* Apenas a primeira letra do primeiro nome */}
+                <span className="text-2xl text-primary">
+                  {fullName?.charAt(0)}
                 </span>
               </Avatar>
             )}
-            <span className="mt-2 text-white text-lg font-bold">{fullName}</span>
+            <span className="mt-2 text-primary text-lg font-bold">{fullName}</span>
           </div>
 
-          <Separator className="my-4 border-emerald-600" />
+          <Separator className="my-6 border-emerald-500 " />
 
           <nav className="mt-4">
             <ul>
-              <li className="py-4 hover:bg-emerald-700 rounded">
+              <li className="py-4 hover:bg-emerald-500 rounded">
                 <Link href="/dashboard">
                   <Home className="inline mr-2" />
                   Dashboard
                 </Link>
               </li>
-              <li className="py-4 hover:bg-emerald-700 rounded">
+              <li className="py-4 hover:bg-emerald-500 rounded">
                 <Link href="/manutencao">
                   <Calendar className="inline mr-2" />
                   Manutenções
                 </Link>
               </li>
-              <li className="py-4 hover:bg-emerald-700 rounded">
+              <li className="py-4 hover:bg-emerald-500 rounded">
                 <Link href="/financeiro">
                   <DollarSign className="inline mr-2" />
                   Financeiro
                 </Link>
               </li>
-              <li className="py-4 hover:bg-emerald-700 rounded">
+              <li className="py-4 hover:bg-emerald-500 rounded">
                 <Link href="/cadastros">
                   <User className="inline mr-2" />
                   Cadastros
                 </Link>
               </li>
-              <li className="py-4 hover:bg-emerald-700 rounded">
+              <li className="py-4 hover:bg-emerald-500 rounded">
                 <Link href="/relatorios">
                   <FileText className="inline mr-2" />
                   Relatórios
                 </Link>
               </li>
-              <li className="py-4 hover:bg-emerald-700 rounded mt-auto">
+              <li className="py-4 hover:bg-emerald-500 rounded mt-auto">
                 <Link href="/configuracoes">
                   <Settings className="inline mr-2" />
                   Configurações Gerais
@@ -140,8 +138,8 @@ const Sidebar = () => {
           </nav>
         </div>
 
-        <div className="py-2 hover:bg-emerald-700 rounded">
-          <Button onClick={handleLogout} className="w-full text-left flex items-center">
+        <div className="py-2">
+          <Button onClick={handleLogout} className="w-full text-left flex items-center text-primary bg-emerald-700 hover:bg-emerald-500">
             <LogOut className="inline mr-2" />
             Sair
           </Button>

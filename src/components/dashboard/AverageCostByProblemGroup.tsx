@@ -1,3 +1,5 @@
+"use client"; // Adicione esta linha
+
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
@@ -9,7 +11,8 @@ const AverageCostByProblemGroup = () => {
     const fetchAverageCostByProblemGroup = async () => {
       const { data: result, error } = await supabase
         .from('manutencoes')
-        .select('grupo_problema, custo');
+        .select('grupo_problema, custo')
+        .eq('custo', 'avg'); // Mudei isso, pois você não pode usar 'avg' diretamente no select
 
       if (error) {
         console.error('Erro ao buscar custo médio por grupo de problema:', error.message);
@@ -18,19 +21,19 @@ const AverageCostByProblemGroup = () => {
 
       const groupedData = result.reduce((acc, item) => {
         if (!acc[item.grupo_problema]) {
-          acc[item.grupo_problema] = { grupoProblema: item.grupo_problema, totalCusto: 0, count: 0 };
+          acc[item.grupo_problema] = { grupoProblema: item.grupo_problema, custoMedio: 0, count: 0 };
         }
-        acc[item.grupo_problema].totalCusto += item.custo;
+        acc[item.grupo_problema].custoMedio += item.custo;
         acc[item.grupo_problema].count += 1;
         return acc;
-      }, {} as Record<string, { grupoProblema: string; totalCusto: number; count: number }>);
+      }, {} as Record<string, { grupoProblema: string; custoMedio: number; count: number }>);
 
-      const averageCostData = Object.values(groupedData).map(item => ({
+      const averageData = Object.values(groupedData).map(item => ({
         grupoProblema: item.grupoProblema,
-        custoMedio: item.totalCusto / item.count,
+        custoMedio: item.custoMedio / item.count,
       }));
 
-      setData(averageCostData);
+      setData(averageData);
     };
 
     fetchAverageCostByProblemGroup();

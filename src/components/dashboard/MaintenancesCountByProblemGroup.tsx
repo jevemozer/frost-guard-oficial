@@ -1,3 +1,5 @@
+"use client"; // Adicione esta linha
+
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';

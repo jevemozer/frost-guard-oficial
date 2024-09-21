@@ -1,3 +1,6 @@
+"use client"; // Adicione esta linha
+
+
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
@@ -9,15 +12,22 @@ const CostByProblemGroup = () => {
     const fetchCostByProblemGroup = async () => {
       const { data: result, error } = await supabase
         .from('manutencoes')
-        .select('grupo_problema, sum(custo) as custo')
-        .group('grupo_problema');
+        .select('grupo_problema, custo');
 
       if (error) {
         console.error('Erro ao buscar custo por grupo de problema:', error.message);
         return;
       }
 
-      setData(result);
+      const groupedData = result.reduce((acc, item) => {
+        if (!acc[item.grupo_problema]) {
+          acc[item.grupo_problema] = { grupoProblema: item.grupo_problema, custo: 0 };
+        }
+        acc[item.grupo_problema].custo += item.custo;
+        return acc;
+      }, {} as Record<string, { grupoProblema: string; custo: number }>);
+
+      setData(Object.values(groupedData));
     };
 
     fetchCostByProblemGroup();

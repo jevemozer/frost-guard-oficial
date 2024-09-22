@@ -27,6 +27,7 @@ const AverageCostByProblemGroup = () => {
         return;
       }
 
+      // Agrupando e somando os custos
       const groupedData = result.reduce((acc: Record<string, { grupoProblema: string; custoTotal: number; count: number }>, item: any) => {
         const groupName = item.maintenance?.problem_group?.nome; // Obter o nome do grupo
 
@@ -40,6 +41,7 @@ const AverageCostByProblemGroup = () => {
         return acc;
       }, {});
 
+      // Calculando a média para cada grupo
       const averageData = Object.values(groupedData).map(item => ({
         grupoProblema: item.grupoProblema,
         custoMedio: item.count > 0 ? item.custoTotal / item.count : 0, // Calcular a média
@@ -51,18 +53,27 @@ const AverageCostByProblemGroup = () => {
     fetchAverageCostByProblemGroup();
   }, []);
 
+  // Função para formatar o valor em Reais
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
+
   return (
-    <Card className="p-6 rounded-lg bg-card dark:bg-card border border-border shadow-md">
-      <h3 className="text-xl font-semibold mb-4">Custo Médio por Grupo de Problema</h3>
+    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col">
+      <h3 className="text-xl font-semibold text-primary text-center mb-4">Custo Médio por Grupo de Problema</h3>
       <ul className="space-y-2">
         {data.length > 0 ? (
           data.map((item) => (
-            <li key={item.grupoProblema} className="p-2 rounded bg-muted text-muted-foreground border border-border">
-              {item.grupoProblema}: R$ {item.custoMedio.toFixed(2)}
+            <li key={item.grupoProblema} className="p-3 rounded-md text-primary bg-muted flex justify-between items-center">
+              {item.grupoProblema.charAt(0).toUpperCase()+item.grupoProblema.slice(1)}:
+              <span className="font-bold text-red-500">{formatCurrency(item.custoMedio)} </span>
             </li>
           ))
         ) : (
-          <li className="p-2 rounded bg-muted text-muted-foreground border border-border">Nenhum dado encontrado.</li>
+          <li className="p-2 rounded bg-background text-primary border border-border">Nenhum dado encontrado.</li>
         )}
       </ul>
     </Card>

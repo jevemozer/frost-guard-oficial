@@ -77,8 +77,8 @@ export default function TotalMaintenancesChart() {
   }, []);
 
   return (
-    <Card className="flex flex-col bg-foreground text-primary">
-      <CardHeader className="items-center justify-center text-center pb-0 text-primary">
+    <Card className="flex flex-col bg-foreground">
+      <CardHeader className="items-center justify-center text-center pb-0 text-foreground">
         <CardTitle>Manutenções Realizadas por Mês</CardTitle>
         <CardDescription>Dados de 2024</CardDescription>
       </CardHeader>
@@ -89,15 +89,15 @@ export default function TotalMaintenancesChart() {
               cursor={false}
               content={<ChartTooltipContent hideLabel />}
               position={{ x: -50, y: 100 }}
-              className="bg-emerald-400 text-xl rounded-md p-2 shadow-lg"
+              className="bg-primary-foreground text-xl rounded-md p-2 shadow-lg text-primary-foreground"
             />
             <Pie data={chartData} dataKey="count" nameKey="month" innerRadius={60} strokeWidth={5}>
               <Label 
                 content={({ viewBox }) => {
                   if (viewBox && "cx" in viewBox && "cy" in viewBox) {
                     return (
-                      <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle" className="text-primary">
-                        <tspan x={viewBox.cx} y={viewBox.cy} className="fill-foreground text-4xl font-bold text-primary">
+                      <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
+                        <tspan x={viewBox.cx} y={viewBox.cy} className="fill-foreground text-4xl font-bold">
                           {totalMaintenances.toLocaleString()}
                         </tspan>
                         <tspan x={viewBox.cx} y={(viewBox.cy || 0) + 24} className="fill-muted-foreground text-primary">

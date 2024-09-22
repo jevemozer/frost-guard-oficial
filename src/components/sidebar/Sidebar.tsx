@@ -62,7 +62,7 @@ const Sidebar = () => {
     <>
       <Button
         onClick={toggleSidebar}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-emerald-500 text-primary rounded-md"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 text-primary rounded-md"
       >
         <Menu />
       </Button>
@@ -70,7 +70,7 @@ const Sidebar = () => {
       <aside
         className={`${
           isOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0 transform transition-transform fixed lg:static top-0 left-0 w-64 h-screen bg-emerald-500 text-primary p-4 flex flex-col justify-between z-50 shadow-lg`}
+        } lg:translate-x-0 transform transition-transform fixed lg:static top-0 left-0 w-64 h-screen bg-primary-foreground text-primary p-4 flex flex-col justify-between z-50 shadow-lg`}
       >
         <div>
           <div className="flex flex-col items-center justify-center p-4">
@@ -85,7 +85,7 @@ const Sidebar = () => {
                 />
               </Avatar>
             ) : (
-              <Avatar className="w-16 h-16 bg-emerald-700 flex items-center justify-center rounded-full">
+              <Avatar className="w-16 h-16 bg-primary-foreground flex items-center justify-center rounded-full">
                 <span className="text-2xl text-primary">
                   {fullName?.charAt(0)}
                 </span>
@@ -94,7 +94,7 @@ const Sidebar = () => {
             <span className="mt-2 text-primary text-lg font-bold">{fullName}</span>
           </div>
 
-          <Separator className="my-6 border-emerald-600 " />
+          <Separator className="my-6 border-primary-foreground" />
 
           <nav className="mt-4">
             <ul>
@@ -139,7 +139,7 @@ const Sidebar = () => {
         </div>
 
         <div className="py-2">
-          <Button onClick={handleLogout} className="w-full text-left flex items-center text-primary bg-emerald-600 hover:bg-emerald-500">
+          <Button onClick={handleLogout} className="w-full text-left flex items-center text-primary bg-primary-foreground hover:bg-emerald-400">
             <LogOut className="inline mr-2" />
             Sair
           </Button>

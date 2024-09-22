@@ -57,8 +57,13 @@ export default function TotalMaintenancesChart() {
       }
 
       const groupedData = data.reduce((acc: Record<string, number>, curr: MaintenanceData) => {
-        const month = new Date(curr.data_problema).toLocaleString('default', { month: 'long' });
-        acc[month] = (acc[month] || 0) + 1;
+        // Formatar para 'MM/YYYY' para evitar sobreposição entre diferentes anos
+        const monthYear = new Date(curr.data_problema).toLocaleString("default", {
+          month: "long",
+          year: "numeric",
+        });
+
+        acc[monthYear] = (acc[monthYear] || 0) + 1;
         return acc;
       }, {});
 

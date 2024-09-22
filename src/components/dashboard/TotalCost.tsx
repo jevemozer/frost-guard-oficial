@@ -1,3 +1,5 @@
+"use client"; // Adicione esta linha
+
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
@@ -8,25 +10,33 @@ const TotalCost = () => {
   useEffect(() => {
     const fetchTotalCost = async () => {
       const { data, error } = await supabase
-        .from('manutencoes')
-        .select('custo')
-        .then((res) => res.data.reduce((acc, curr) => acc + curr.custo, 0));
+        .from('payment')
+        .select('custo');
 
       if (error) {
         console.error('Erro ao buscar custo total:', error.message);
         return;
       }
 
-      setTotalCost(data);
+      // Calcular o custo total
+      const total = data.reduce((acc, curr) => acc + parseFloat(curr.custo || '0'), 0);
+      setTotalCost(total);
     };
 
     fetchTotalCost();
   }, []);
 
+  const formatCurrency = (value: number | null) => {
+    if (value === null) return 'Carregando...';
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  };
+
   return (
-    <Card>
-      <h3>Custo Total</h3>
-      <p>{totalCost !== null ? `R$ ${totalCost.toFixed(2)}` : 'Carregando...'}</p>
+    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col justify-center items-center">
+      <h3 className="text-xl font-semibold text-primary text-center mb-4">Custo Total</h3>
+      <p className="text-3xl font-bold text-red-500">
+        {formatCurrency(totalCost)}
+      </p>
     </Card>
   );
 };

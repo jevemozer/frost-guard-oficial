@@ -41,14 +41,26 @@ const CostByMonth = () => {
     fetchCostByMonth();
   }, []);
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
+
+  const formatMonth = (monthString: string) => {
+    const month = new Date(monthString + '-01').toLocaleString('default', { month: 'long' });
+    return month.charAt(0).toUpperCase() + month.slice(1); // Primeira letra maiúscula
+  };
+
   return (
-    <Card className="p-6 rounded-lg bg-foreground dark:bg-card text-foreground shadow-md">
+    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col items-center">
       <h3 className="text-xl font-semibold text-balance mb-4">Custo por Mês</h3>
       <ul className="space-y-2">
         {data.map((item) => (
           <li key={item.mes} className="flex justify-between text-xl text-primary font-medium">
-            <span>{new Date(item.mes + '-01').toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-            <span className="font-semibold text-emerald-600 dark:text-emerald-400">R$ {item.custo.toFixed(2)}</span>
+            <span className="mr-4">{formatMonth(item.mes)}</span> {/* Adiciona margem à direita */}
+            <span className="font-semibold text-red-500">{formatCurrency(item.custo)}</span>
           </li>
         ))}
       </ul>

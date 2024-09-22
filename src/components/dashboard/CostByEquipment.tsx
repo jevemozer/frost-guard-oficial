@@ -74,11 +74,19 @@ const CostByEquipment = () => {
     fetchCostByEquipment();
   }, []);
 
+  // Função para formatar o valor como moeda brasileira
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
+
   return (
-    <Card className="p-6 rounded-lg bg-foreground dark:bg-card text-foreground shadow-md">
-      <h3 className="text-xl font-semibold text-balance mb-4">Custo por Equipamento</h3>
-      <h4 className="text-lg font-semibold mt-2">Número de Equipamentos: <span className="text-foreground">{equipmentCount}</span></h4>
-      <h4 className="text-lg font-semibold mt-2">Custo Médio por Equipamento: <span className="text-balance text-red-600">R$ {averageCost.toFixed(2)}</span></h4>
+    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col items-center">
+      <h2 className="text-xl font-semibold text-balance mb-4">Custo por Equipamento</h2>
+      <h4 className="text-lg mt-2">Número de Equipamentos: <span className="text-foreground">{equipmentCount}</span></h4>
+      <h4 className="text-lg mt-2">Custo Médio por Equipamento: <span className="text-balance text-red-500 font-semibold">{formatCurrency(averageCost)}</span></h4>
     </Card>
   );
 };

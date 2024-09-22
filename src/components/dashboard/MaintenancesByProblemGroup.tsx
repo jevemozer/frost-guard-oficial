@@ -7,7 +7,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import { LabelList, Pie, PieChart } from "recharts";
@@ -70,7 +69,7 @@ const MaintenancesByProblemGroup = () => {
   };
 
   return (
-    <Card className="flex flex-col justify-center text-center bg-card text-card-foreground border border-border rounded-lg">
+    <Card className="flex flex-col justify-center text-center bg-foreground text-primary border border-border rounded-lg">
       <CardHeader className="items-center justify-center pb-0">
         <CardTitle className="text-lg font-semibold">Manutenções por Grupo de Problema</CardTitle>
       </CardHeader>
@@ -92,9 +91,6 @@ const MaintenancesByProblemGroup = () => {
           </PieChart>
         </ChartContainer>
       </CardContent>
-      <CardFooter className="flex-col gap-2 text-sm">
-        {/* Adicione conteúdo do footer se necessário */}
-      </CardFooter>
     </Card>
   );
 };

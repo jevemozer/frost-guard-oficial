@@ -5,37 +5,74 @@ import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
 
 const Top20MostMaintainedEquipment = () => {
-  const [data, setData] = useState<{ equipamento: string; count: number }[]>([]);
+  const [data, setData] = useState<{ id: string; frota: string; count: number }[]>([]);
 
   useEffect(() => {
     const fetchTop20MostMaintainedEquipment = async () => {
-      const { data: result, error } = await supabase
-        .from('manutencoes')
-        .select('equipamento, count(*) as count')
-        .group('equipamento')
-        .order('count', { ascending: false })
-        .limit(20);
+      const { data: maintenances, error: maintenanceError } = await supabase
+        .from('maintenance')
+        .select('equipment_id')
+        .eq('status', 'concluída'); // Filtra apenas manutenções concluídas
 
-      if (error) {
-        console.error('Erro ao buscar equipamentos mais mantidos:', error.message);
+      if (maintenanceError) {
+        console.error('Erro ao buscar manutenções:', maintenanceError.message);
         return;
       }
 
-      setData(result);
+      // Agrupar manutenções por equipamento
+      const maintenanceCount: Record<string, number> = {};
+      maintenances.forEach((maintenance) => {
+        const equipmentId = maintenance.equipment_id;
+        maintenanceCount[equipmentId] = (maintenanceCount[equipmentId] || 0) + 1;
+      });
+
+      // Obter os 20 equipamentos mais mantidos
+      const topEquipmentIds = Object.entries(maintenanceCount)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 20)
+        .map(([id]) => id);
+
+      // Obter informações dos equipamentos
+      const { data: equipmentData, error: equipmentError } = await supabase
+        .from('equipment')
+        .select('id, frota')
+        .in('id', topEquipmentIds);
+
+      if (equipmentError) {
+        console.error('Erro ao buscar dados dos equipamentos:', equipmentError.message);
+        return;
+      }
+
+      // Combinar dados das manutenções e equipamentos
+      const combinedData = topEquipmentIds.map((id) => {
+        const count = maintenanceCount[id];
+        const equipment = equipmentData.find(eq => eq.id === id);
+        return {
+          id: equipment?.id || 'Desconhecido',
+          frota: equipment?.frota || 'Desconhecido',
+          count: count || 0,
+        };
+      });
+
+      setData(combinedData);
     };
 
     fetchTop20MostMaintainedEquipment();
   }, []);
 
   return (
-    <Card>
-      <h3>Top 20 Equipamentos Mais Mantidos</h3>
-      <ul>
-        {data.map((item) => (
-          <li key={item.equipamento}>
-            {item.equipamento}: {item.count} manutenções
-          </li>
-        ))}
+    <Card className="p-6 rounded-lg bg-card dark:bg-card border border-border shadow-md">
+      <h3 className="text-xl font-semibold mb-4">Top 20 Equipamentos Mais Mantidos</h3>
+      <ul className="space-y-2">
+        {data.length > 0 ? (
+          data.map((item) => (
+            <li key={item.id} className="p-2 rounded bg-muted text-muted-foreground border border-border">
+              {item.frota.charAt(0).toUpperCase()+item.frota.slice(1)}: {item.count} manutenções
+            </li>
+          ))
+        ) : (
+          <li className="p-2 rounded bg-muted text-muted-foreground border border-border">Nenhum dado encontrado.</li>
+        )}
       </ul>
     </Card>
   );

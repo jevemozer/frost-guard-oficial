@@ -44,10 +44,10 @@ const MaintenancesAverageByEquipment = () => {
   return (
     <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col items-center justify-center text-center">
       <CardHeader>
-        <CardTitle className="text-lg font-medium text-foreground">Média de Manutenções</CardTitle>
+        <CardTitle className="text-primary text-2xl font-semibold">Média de Manutenções</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-4xl font-bold text-foreground">
+        <div className="text-4xl font-bold text-primary">
           {average !== null ? average.toFixed(2) : 'Carregando...'}
         </div>
       </CardContent>

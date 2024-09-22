@@ -62,7 +62,7 @@ const Sidebar = () => {
     <>
       <Button
         onClick={toggleSidebar}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 text-primary rounded-md"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 text-primary bg-primary-foreground rounded-md"
       >
         <Menu />
       </Button>

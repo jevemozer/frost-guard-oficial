@@ -44,14 +44,18 @@ const CostByProblemGroup = () => {
     fetchCostByProblemGroup();
   }, []);
 
+  const formatCurrency = (value: number) => {
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
+
   return (
-    <Card className="p-6 rounded-lg bg-foreground dark:bg-card text-primary shadow-md">
-      <h3 className="text-xl font-semibold text-primary mb-4">Custo por Grupo de Problema</h3>
+    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col">
+      <h3 className="text-xl font-semibold text-primary text-center mb-4">Custo por Grupo de Problema</h3>
       <ul className="space-y-2">
         {data.map((item) => (
           <li key={item.nome} className="p-3 rounded-md text-primary bg-muted flex justify-between items-center">
-            <span>{item.nome}</span>
-            <span className="font-bold text-red-600">R$ {item.custo.toFixed(2)}</span>
+            <span>{item.nome.charAt(0).toUpperCase()+item.nome.slice(1)}</span>
+            <span className="font-bold text-red-500">{formatCurrency(item.custo)}</span>
           </li>
         ))}
       </ul>

@@ -92,7 +92,7 @@ const MaintenancesCountByProblemGroup = () => {
         {data.length > 0 ? (
           data.map((item) => (
             <li key={item.grupoProblema} className="p-2 rounded bg-muted text-muted-foreground border border-border">
-              {item.grupoProblema.charAt(0).toLocaleUpperCase() + item.grupoProblema.slice(1)}: {item.count} - Custo total: R$ {item.totalCost.toFixed(2)}
+              {item.grupoProblema.charAt(0).toUpperCase() + item.grupoProblema.slice(1)}: {item.count} - Custo total: R$ {item.totalCost.toFixed(2)}
             </li>
           ))
         ) : (

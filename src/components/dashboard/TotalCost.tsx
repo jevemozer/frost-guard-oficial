@@ -26,11 +26,16 @@ const TotalCost = () => {
     fetchTotalCost();
   }, []);
 
+  const formatCurrency = (value: number | null) => {
+    if (value === null) return 'Carregando...';
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  };
+
   return (
-    <Card className="p-4 text-center">
-      <h3 className="text-lg font-semibold">Custo Total</h3>
+    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col items-center justify-center text-center">
+      <h3 className="text-lg font-semibold p-6">Custo Total</h3>
       <p className="text-xl">
-        {totalCost !== null ? `R$ ${totalCost.toFixed(2)}` : 'Carregando...'}
+        {formatCurrency(totalCost)}
       </p>
     </Card>
   );

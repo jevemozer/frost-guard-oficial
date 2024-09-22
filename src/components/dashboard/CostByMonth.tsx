@@ -10,28 +10,45 @@ const CostByMonth = () => {
   useEffect(() => {
     const fetchCostByMonth = async () => {
       const { data: result, error } = await supabase
-        .from('manutencoes')
-        .select('date_trunc("month", data) as mes, sum(custo) as custo')
-        .group('mes');
+        .from('payment')
+        .select('data_vencimento, custo');
 
       if (error) {
         console.error('Erro ao buscar custo por mês:', error.message);
         return;
       }
 
-      setData(result);
+      if (!result) {
+        console.warn('Nenhum dado encontrado.');
+        return;
+      }
+
+      const monthlyCosts = result.reduce((acc: { [key: string]: number }, curr: { data_vencimento: string; custo: string }) => {
+        const month = new Date(curr.data_vencimento).toISOString().slice(0, 7); // Formato YYYY-MM
+        acc[month] = (acc[month] || 0) + parseFloat(curr.custo || '0');
+        return acc;
+      }, {});
+
+      // Converte o objeto para um array
+      const formattedData = Object.entries(monthlyCosts).map(([mes, custo]) => ({
+        mes,
+        custo,
+      }));
+
+      setData(formattedData);
     };
 
     fetchCostByMonth();
   }, []);
 
   return (
-    <Card>
-      <h3>Custo por Mês</h3>
-      <ul>
+    <Card className="p-6 rounded-lg bg-foreground dark:bg-card text-foreground shadow-md">
+      <h3 className="text-xl font-semibold text-balance mb-4">Custo por Mês</h3>
+      <ul className="space-y-2">
         {data.map((item) => (
-          <li key={item.mes}>
-            {new Date(item.mes).toLocaleString('default', { month: 'long' })}: R$ {item.custo.toFixed(2)}
+          <li key={item.mes} className="flex justify-between text-sm font-medium text-muted-foreground">
+            <span>{new Date(item.mes + '-01').toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+            <span className="text-emerald-600 dark:text-emerald-400">R$ {item.custo.toFixed(2)}</span>
           </li>
         ))}
       </ul>

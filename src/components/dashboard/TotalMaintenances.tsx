@@ -1,46 +1,123 @@
-"use client"; // Adicione esta linha
+"use client";
 
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Wrench } from "lucide-react"; // Ícone de ferramenta
+import * as React from "react";
+import { Label, Pie, PieChart } from "recharts";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import { supabase } from "@/lib/supabase";
 
-const TotalMaintenances = () => {
-  const [totalMaintenances, setTotalMaintenances] = useState<number | null>(null);
+// Configuração do gráfico
+const chartConfig = {
+  manutenções: {
+    label: "Manutenções",
+  },
+} satisfies ChartConfig;
 
-  useEffect(() => {
-    const fetchTotalMaintenances = async () => {
-      const { data, error } = await supabase
-        .from('maintenance')
-        .select('*', { count: 'exact' });
+// Definindo o tipo para os dados da manutenção
+type MaintenanceData = {
+  data_problema: string;
+};
+
+// Mudando o tipo de dados esperado para a consulta
+type SupabaseResponse<T> = {
+  data: T[] | null;
+  error: any;
+};
+
+export default function TotalMaintenancesChart() {
+  const [chartData, setChartData] = React.useState<{ month: string; count: number; fill: string; }[]>([]);
+  const [totalMaintenances, setTotalMaintenances] = React.useState<number>(0);
+
+  React.useEffect(() => {
+    const fetchMaintenanceData = async () => {
+      const { data, error }: SupabaseResponse<MaintenanceData> = await supabase
+        .from<MaintenanceData>("maintenance")
+        .select("data_problema")
+        .order("data_problema", { ascending: true });
 
       if (error) {
-        console.error('Erro ao buscar manutenções:', error.message);
+        console.error("Erro ao buscar manutenções:", error.message);
         return;
       }
 
-      setTotalMaintenances(data?.length || 0);
+      if (!data) {
+        console.error("Nenhum dado encontrado.");
+        return;
+      }
+
+      const groupedData = data.reduce((acc: Record<string, number>, curr: MaintenanceData) => {
+        const month = new Date(curr.data_problema).toLocaleString('default', { month: 'long' });
+        acc[month] = (acc[month] || 0) + 1;
+        return acc;
+      }, {});
+
+      const formattedData = Object.entries(groupedData).map(([month, count], index) => ({
+        month,
+        count,
+        fill: `var(--emerald-${Math.min(500 + index * 100, 900)})`, // Cores emerald
+      }));
+
+      setChartData(formattedData);
+      setTotalMaintenances(formattedData.reduce((acc, curr) => acc + curr.count, 0));
     };
 
-    fetchTotalMaintenances();
+    fetchMaintenanceData();
   }, []);
 
   return (
-    <Card className="bg-white shadow-md rounded-lg border border-border">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-foreground">Total de Manutenções</CardTitle>
-        <Wrench className="h-4 w-4 text-muted-foreground" />
+    <Card className="flex flex-col bg-foreground text-primary">
+      <CardHeader className="items-center justify-center text-center pb-0 text-primary">
+        <CardTitle>Manutenções Realizadas por Mês</CardTitle>
+        <CardDescription>Dados de 2024</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-foreground">
-          {totalMaintenances !== null ? totalMaintenances : 'Carregando...'}
-        </div>
-        <p className="text-xs text-muted-foreground">
-          {totalMaintenances !== null ? `${totalMaintenances} manutenções registradas` : ''}
-        </p>
+      <CardContent className="flex-1 pb-0 text-primary">
+        <ChartContainer config={chartConfig} className="mx-auto text-primary aspect-square max-h-[250px]">
+          <PieChart className="text-primary">
+            <ChartTooltip
+              cursor={false}
+              content={<ChartTooltipContent hideLabel />}
+              position={{ x: -50, y: 100 }}
+              className="bg-emerald-400 text-xl rounded-md p-2 shadow-lg"
+            />
+            <Pie data={chartData} dataKey="count" nameKey="month" innerRadius={60} strokeWidth={5}>
+              <Label 
+                content={({ viewBox }) => {
+                  if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                    return (
+                      <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle" className="text-primary">
+                        <tspan x={viewBox.cx} y={viewBox.cy} className="fill-foreground text-4xl font-bold text-primary">
+                          {totalMaintenances.toLocaleString()}
+                        </tspan>
+                        <tspan x={viewBox.cx} y={(viewBox.cy || 0) + 24} className="fill-muted-foreground text-primary">
+                          Manutenções
+                        </tspan>
+                      </text>
+                    );
+                  }
+                  return null;
+                }}
+              />
+            </Pie>
+          </PieChart>
+        </ChartContainer>
       </CardContent>
+      <CardFooter className="flex-col gap-2 text-sm">
+        <div className="leading-none text-muted-foreground">
+          Total de manutenções realizadas
+        </div>
+      </CardFooter>
     </Card>
   );
-};
-
-export default TotalMaintenances;
+}

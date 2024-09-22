@@ -13,11 +13,11 @@ import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import { LabelList, Pie, PieChart } from "recharts";
 
 const emeraldColors = [
-  '#10B981', // emerald-600
-  '#059669', // emerald-500
-  '#047857', // emerald-400
-  '#065F46', // emerald-300
-  '#064E3B', // emerald-200
+  'var(--emerald-600)', // emerald-600
+  'var(--emerald-500)', // emerald-500
+  'var(--emerald-400)', // emerald-400
+  'var(--emerald-300)', // emerald-300
+  'var(--emerald-200)', // emerald-200
 ];
 
 const MaintenancesByProblemGroup = () => {
@@ -70,10 +70,9 @@ const MaintenancesByProblemGroup = () => {
   };
 
   return (
-    <Card className="flex flex-col justify-center text-center">
+    <Card className="flex flex-col justify-center text-center bg-card text-card-foreground border border-border rounded-lg">
       <CardHeader className="items-center justify-center pb-0">
-        <CardTitle>Manutenções por Grupo de Problema</CardTitle>
-
+        <CardTitle className="text-lg font-semibold">Manutenções por Grupo de Problema</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
         <ChartContainer
@@ -94,7 +93,7 @@ const MaintenancesByProblemGroup = () => {
         </ChartContainer>
       </CardContent>
       <CardFooter className="flex-col gap-2 text-sm">
-
+        {/* Adicione conteúdo do footer se necessário */}
       </CardFooter>
     </Card>
   );

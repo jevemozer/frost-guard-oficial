@@ -10,25 +10,28 @@ const TotalCost = () => {
   useEffect(() => {
     const fetchTotalCost = async () => {
       const { data, error } = await supabase
-        .from('manutencoes')
-        .select('custo')
-        .then((res) => res.data.reduce((acc, curr) => acc + curr.custo, 0));
+        .from('payment')
+        .select('custo');
 
       if (error) {
         console.error('Erro ao buscar custo total:', error.message);
         return;
       }
 
-      setTotalCost(data);
+      // Calcular o custo total
+      const total = data.reduce((acc, curr) => acc + parseFloat(curr.custo || '0'), 0);
+      setTotalCost(total);
     };
 
     fetchTotalCost();
   }, []);
 
   return (
-    <Card>
-      <h3>Custo Total</h3>
-      <p>{totalCost !== null ? `R$ ${totalCost.toFixed(2)}` : 'Carregando...'}</p>
+    <Card className="p-4 text-center">
+      <h3 className="text-lg font-semibold">Custo Total</h3>
+      <p className="text-xl">
+        {totalCost !== null ? `R$ ${totalCost.toFixed(2)}` : 'Carregando...'}
+      </p>
     </Card>
   );
 };

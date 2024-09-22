@@ -1,4 +1,4 @@
-"use client"; // Adicione esta linha
+"use client";
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -42,17 +42,14 @@ const MaintenancesAverageByEquipment = () => {
   }, []);
 
   return (
-    <Card className="bg-white shadow-md rounded-lg border border-border p-4">
+    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col items-center justify-center text-center">
       <CardHeader>
-        <CardTitle className="text-lg font-medium text-foreground">Média de Manutenções por Equipamento</CardTitle>
+        <CardTitle className="text-lg font-medium text-foreground">Média de Manutenções</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold text-foreground">
+        <div className="text-4xl font-bold text-foreground">
           {average !== null ? average.toFixed(2) : 'Carregando...'}
         </div>
-        <p className="text-xs text-muted-foreground">
-          {average !== null ? `${average.toFixed(2)} manutenções por equipamento` : ''}
-        </p>
       </CardContent>
     </Card>
   );

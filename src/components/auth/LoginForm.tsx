@@ -27,7 +27,7 @@ export function LoginForm() {
     if (error) {
       setError(error.message);
     } else {
-      router.push("/home"); // Redirect to home on successful login
+      router.push("/"); // Redirect to home on successful login
     }
 
     setLoading(false);

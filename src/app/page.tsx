@@ -31,7 +31,7 @@ export default function Home() {
       {/* Botão estilizado de acordo com o CSS global */}
       <Button
         onClick={goToHome}
-        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 text-primary"
+        className="bg-emerald-400 hover:bg-emerald-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 text-primary"
       >
         Clique aqui para começar!
       </Button>

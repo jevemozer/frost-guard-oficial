@@ -46,9 +46,9 @@ const CostByMonth = () => {
       <h3 className="text-xl font-semibold text-balance mb-4">Custo por Mês</h3>
       <ul className="space-y-2">
         {data.map((item) => (
-          <li key={item.mes} className="flex justify-between text-sm font-medium text-muted-foreground">
+          <li key={item.mes} className="flex justify-between text-xl text-primary font-medium">
             <span>{new Date(item.mes + '-01').toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-            <span className="text-emerald-600 dark:text-emerald-400">R$ {item.custo.toFixed(2)}</span>
+            <span className="font-semibold text-emerald-600 dark:text-emerald-400">R$ {item.custo.toFixed(2)}</span>
           </li>
         ))}
       </ul>

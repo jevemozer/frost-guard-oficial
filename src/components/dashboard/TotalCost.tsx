@@ -32,9 +32,9 @@ const TotalCost = () => {
   };
 
   return (
-    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col items-center justify-center text-center">
-      <h3 className="text-lg font-semibold p-6">Custo Total</h3>
-      <p className="text-xl">
+    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col justify-center items-center">
+      <h3 className="text-xl font-semibold text-primary text-center mb-4">Custo Total</h3>
+      <p className="text-3xl font-bold text-red-500">
         {formatCurrency(totalCost)}
       </p>
     </Card>

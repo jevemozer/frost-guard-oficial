@@ -85,14 +85,26 @@ const MaintenancesCountByProblemGroup = () => {
     fetchMaintenancesCountByProblemGroup();
   }, []);
 
+  // Função para formatar valores monetários em BRL
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
+
   return (
-    <Card className="p-6 rounded-lg bg-primary-foreground border border-border shadow-md text-primary">
-      <h3 className="text-xl font-semibold mb-4 text-center text-primary">Manutenções por Grupo de Problema</h3>
+    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col">
+      <h3 className="text-xl font-semibold text-primary text-center mb-4">Manutenções por Grupo de Problema</h3>
       <ul className="space-y-2">
         {data.length > 0 ? (
           data.map((item) => (
-            <li key={item.grupoProblema} className="p-2 rounded bg-muted text-muted-foreground border border-border">
-              {item.grupoProblema.charAt(0).toUpperCase() + item.grupoProblema.slice(1)}: {item.count} - Custo total: R$ {item.totalCost.toFixed(2)}
+            <li key={item.grupoProblema} className="p-3 rounded-md text-primary bg-muted flex justify-between items-center">
+              {item.grupoProblema.charAt(0).toUpperCase() + item.grupoProblema.slice(1)}: {item.count} - 
+              <div>
+                <span>Custo total: </span> 
+                <span className="font-bold text-red-500">{formatCurrency(item.totalCost)}</span>
+              </div>         
             </li>
           ))
         ) : (

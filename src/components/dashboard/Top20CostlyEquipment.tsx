@@ -61,7 +61,7 @@ const Top20CostlyEquipment = () => {
         const finalData = equipmentIds.map(equipmentId => {
           const equipment = equipmentData.find(e => e.id === equipmentId);
           return {
-            equipamento: equipment ? `${equipment.frota.charAt(0).toUpperCase()+equipment.frota.slice(1)} - ${equipment.modelo.charAt(0).toUpperCase()+equipment.modelo.slice(1)}` : 'Desconhecido',
+            equipamento: equipment ? `${equipment.frota.charAt(0).toUpperCase() + equipment.frota.slice(1)} - ${equipment.modelo.charAt(0).toUpperCase() + equipment.modelo.slice(1)}` : 'Desconhecido',
             custo: equipmentCosts[equipmentId],
           };
         });
@@ -82,19 +82,23 @@ const Top20CostlyEquipment = () => {
   if (loading) return <Card>Carregando...</Card>;
 
   return (
-    <Card className="p-6 rounded-lg bg-primary-foreground border border-border shadow-md">
-      <h3 className="text-xl font-semibold mb-4 text-center">Top 20 Equipamentos Mais Caros</h3>
+    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col">
+      <h3 className="text-xl font-semibold text-primary text-center mb-4">Top 20 Equipamentos Mais Caros</h3>
       {error ? (
         <div className="text-red-600">{error}</div>
       ) : (
         <ul className="space-y-2">
           {data.length > 0 ? (
             data.map((item) => (
-              <li key={item.equipamento} className="p-2 rounded bg-muted text-muted-foreground border border-border"> Frota     {item.equipamento}: R$ {item.custo.toFixed(2)}
+              <li key={item.equipamento} className="p-3 rounded-md text-primary bg-muted flex justify-between items-center">
+                Frota {item.equipamento}: 
+                <span className="font-bold text-red-500">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.custo)}
+                </span>
               </li>
             ))
           ) : (
-            <li className="p-2 rounded bg-muted text-muted-foreground border border-border">Nenhum dado encontrado.</li>
+            <li className="p-2 rounded bg-background text-muted-foreground border border-border">Nenhum dado encontrado.</li>
           )}
         </ul>
       )}

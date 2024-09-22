@@ -6,7 +6,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -77,14 +76,14 @@ export default function TotalMaintenancesChart() {
   }, []);
 
   return (
-    <Card className="flex flex-col bg-foreground">
-      <CardHeader className="items-center justify-center text-center pb-0 text-foreground">
+    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col">
+      <CardHeader className="text-xl p-2 font-semibold text-primary text-center mb-4">
         <CardTitle>Manutenções Realizadas por Mês</CardTitle>
-        <CardDescription>Dados de 2024</CardDescription>
+        <CardDescription className="text-background">Dados de 2024</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 pb-0 text-primary">
-        <ChartContainer config={chartConfig} className="mx-auto text-primary aspect-square max-h-[250px]">
-          <PieChart className="text-primary">
+      <CardContent className="flex-1 pb-0">
+        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px]">
+          <PieChart>
             <ChartTooltip
               cursor={false}
               content={<ChartTooltipContent hideLabel />}
@@ -113,11 +112,6 @@ export default function TotalMaintenancesChart() {
           </PieChart>
         </ChartContainer>
       </CardContent>
-      <CardFooter className="flex-col gap-2 text-sm">
-        <div className="leading-none text-muted-foreground">
-          Total de manutenções realizadas
-        </div>
-      </CardFooter>
     </Card>
   );
 }

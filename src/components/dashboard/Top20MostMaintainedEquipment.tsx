@@ -61,13 +61,14 @@ const Top20MostMaintainedEquipment = () => {
   }, []);
 
   return (
-    <Card className="p-6 rounded-lg bg-card dark:bg-card border border-border shadow-md">
-      <h3 className="text-xl font-semibold mb-4">Top 20 Equipamentos Mais Mantidos</h3>
+    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col">
+      <h3 className="text-xl font-semibold text-primary text-center mb-4">Top 20 Equipamentos Mais Mantidos</h3>
       <ul className="space-y-2">
         {data.length > 0 ? (
           data.map((item) => (
-            <li key={item.id} className="p-2 rounded bg-muted text-muted-foreground border border-border">
-              {item.frota.charAt(0).toUpperCase()+item.frota.slice(1)}: {item.count} manutenções
+            <li key={item.id} className="p-3 rounded-md text-primary bg-muted flex justify-between items-center">
+              {item.frota.charAt(0).toUpperCase()+item.frota.slice(1)}:
+              <span className="font-bold text-red-500">{item.count} manutenções </span>
             </li>
           ))
         ) : (

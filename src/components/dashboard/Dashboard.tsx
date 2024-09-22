@@ -1,6 +1,5 @@
 import TotalMaintenances from '@/components/dashboard/TotalMaintenances';
 import MaintenancesByEquipment from '@/components/dashboard/MaintenancesByEquipment';
-import MaintenancesByProblemGroup from '@/components/dashboard/MaintenancesByProblemGroup';
 import TotalCost from '@/components/dashboard/TotalCost';
 import CostByMonth from '@/components/dashboard/CostByMonth';
 import CostByEquipment from '@/components/dashboard/CostByEquipment';
@@ -15,7 +14,6 @@ const Dashboard = () => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <TotalMaintenances />
       <MaintenancesByEquipment />
-      <MaintenancesByProblemGroup />
       <TotalCost />
       <CostByMonth />
       <CostByEquipment />

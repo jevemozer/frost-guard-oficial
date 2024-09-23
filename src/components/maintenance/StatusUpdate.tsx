@@ -8,7 +8,7 @@ import { updateMaintenanceStatus } from '@/lib/supabase'; // Função que atuali
 
 interface StatusUpdateProps {
   maintenanceId: string;
-  currentStatus: string;
+  status: string;
   onStatusChange: (newStatus: string) => void; // Função para atualizar o status na UI
 }
 
@@ -18,8 +18,8 @@ const statusOptions = [
   { label: 'Em Manutenção', value: 'em_manutencao' },
 ];
 
-export const StatusUpdate: React.FC<StatusUpdateProps> = ({ maintenanceId, currentStatus, onStatusChange }) => {
-  const [selectedStatus, setSelectedStatus] = useState(currentStatus);
+export const StatusUpdate: React.FC<StatusUpdateProps> = ({ maintenanceId, status, onStatusChange }) => {
+  const [selectedStatus, setSelectedStatus] = useState(status);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleStatusChange = async () => {

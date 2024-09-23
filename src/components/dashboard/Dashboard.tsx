@@ -12,9 +12,9 @@ import Top20MostMaintainedEquipment from '@/components/dashboard/Top20MostMainta
 const Dashboard = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <TotalMaintenances />
       <TotalCost />
       <MaintenancesByEquipment />
+      <TotalMaintenances />
       <CostByMonth />
       <CostByEquipment />
       <CostByProblemGroup />

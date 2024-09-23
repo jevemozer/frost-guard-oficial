@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Card } from '@/components/ui/card';
+import { Card, CardTitle} from '@/components/ui/card';
 
 const TotalCost = () => {
   const [totalCost, setTotalCost] = useState<number | null>(null);
@@ -33,7 +33,8 @@ const TotalCost = () => {
 
   return (
     <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col justify-center items-center">
-      <h3 className="text-xl font-semibold text-primary text-center mb-4">Custo Total</h3>
+        <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">Custo Total
+        </CardTitle>
       <p className="text-3xl font-bold text-red-500">
         {formatCurrency(totalCost)}
       </p>

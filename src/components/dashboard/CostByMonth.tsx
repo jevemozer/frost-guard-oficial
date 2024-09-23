@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Card } from '@/components/ui/card';
+import { Card, CardTitle } from '@/components/ui/card';
 
 const CostByMonth = () => {
   const [data, setData] = useState<{ mes: string; custo: number }[]>([]);
@@ -55,12 +55,15 @@ const CostByMonth = () => {
 
   return (
     <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col items-center">
-      <h3 className="text-xl font-semibold text-balance mb-4">Custo por Mês</h3>
+      <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">Custo por Mês
+      </CardTitle>
       <ul className="space-y-2">
         {data.map((item) => (
           <li key={item.mes} className="flex justify-between text-xl text-primary font-medium">
-            <span className="mr-4">{formatMonth(item.mes)}</span> {/* Adiciona margem à direita */}
-            <span className="font-semibold text-red-500">{formatCurrency(item.custo)}</span>
+            <span className="mr-4">{formatMonth(item.mes)}
+            </span> {/* Adiciona margem à direita */}
+            <span className="font-semibold text-red-500">   {formatCurrency(item.custo)}
+            </span>
           </li>
         ))}
       </ul>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Card, CardTitle } from '@/components/ui/card';
+import { Card, CardTitle, CardHeader, CardContent} from '@/components/ui/card';
 
 interface CostData {
   mes: string;
@@ -88,18 +88,23 @@ const CostByMonth = () => {
 
   return (
     <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col justify-center">
-      <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">Custo por Mês</CardTitle>
-      <ul className="space-y-2">
-        {data.map((item) => (
-          <li key={`${item.mes}-${item.moeda}`} className="flex justify-between text-xl text-primary font-medium">
-            <span className="mr-4">{formatMonth(item.mes)} ({item.moeda})</span>
-            <span className="font-semibold text-red-500">
-              {item.moeda} {formatCurrency(item.custo, item.moeda)}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </Card>
+      <CardHeader>
+        <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">Custo por Mês
+        </CardTitle>
+      </CardHeader>
+    <CardContent>
+        <ul className="space-y-2">
+          {data.map((item) => (
+            <li key={`${item.mes}-${item.moeda}`} className="flex justify-between text-xl text-primary font-medium">
+              <span className="mr-4">{formatMonth(item.mes)} ({item.moeda})</span>
+              <span className="font-bold text-red-500">
+                {item.moeda} {formatCurrency(item.custo, item.moeda)}
+              </span>
+            </li>
+          ))}
+        </ul>
+    </CardContent>
+  </Card>
   );
 };
 

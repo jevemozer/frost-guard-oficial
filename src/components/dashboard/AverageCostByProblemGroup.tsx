@@ -1,139 +1,104 @@
-"use client";
+"use client"; // Adicione esta linha
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { Loader2 } from 'lucide-react';
+import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
 
-type Maintenance = {
-  id: string;
-  data_problema: string;
-  status: string;
-};
-
-type Payment = {
-  maintenance_id: string;
+interface Payment {
   custo: number;
-};
-
-export default function TotalMaintenances() {
-  const [totalCost, setTotalCost] = useState<number>(0);
-  const [totalMaintenances, setTotalMaintenances] = useState<number>(0);
-  const [monthlyMaintenances, setMonthlyMaintenances] = useState<Record<string, number>>({});
-  const [loading, setLoading] = useState(true);
-
-  const formatCurrency = (amount: number, currency: string): string => {
-    const options: Intl.NumberFormatOptions = {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    };
-
-    switch (currency) {
-      case 'BRL':
-        return new Intl.NumberFormat('pt-BR', options).format(amount);
-      case 'ARS':
-        return new Intl.NumberFormat('es-AR', options).format(amount);
-      case 'CLP':
-        return new Intl.NumberFormat('es-CL', options).format(amount);
-      case 'PYG':
-        return new Intl.NumberFormat('es-PY', options).format(amount);
-      case 'UYU':
-        return new Intl.NumberFormat('es-UY', options).format(amount);
-      default:
-        return amount.toFixed(2);
-    }
+  cost_center: {
+    moeda: string;
   };
+  maintenance: {
+    problem_group_id: string;
+    problem_group: {
+      nome: string;
+    };
+  };
+}
+
+interface AverageCostData {
+  moeda: string;
+  grupoProblema: string;
+  custoMedio: number;
+}
+
+const AverageCostByProblemGroup = () => {
+  const [data, setData] = useState<AverageCostData[]>([]);
 
   useEffect(() => {
-    const fetchMaintenances = async () => {
-      setLoading(true);
-
-      const { data: paymentData, error: paymentError } = await supabase
+    const fetchAverageCostByProblemGroup = async () => {
+      const { data: result, error } = await supabase
         .from<Payment>('payment')
-        .select('maintenance_id, custo')
-        .eq('status', 'Pago');
-
-      if (paymentError) {
-        console.error('Erro ao buscar pagamentos:', paymentError);
-        setLoading(false);
-        return;
-      }
-
-      const maintenanceIds = paymentData?.map((payment) => payment.maintenance_id) || [];
-      const totalPaymentCost = paymentData?.reduce((sum, payment) => sum + payment.custo, 0) || 0;
-
-      const { data, error } = await supabase
-        .from<Maintenance>('maintenance')
-        .select('id, data_problema, status')
-        .eq('status', 'Finalizada')
-        .in('id', maintenanceIds);
+        .select(`custo, cost_center (moeda), maintenance (problem_group_id, problem_group (nome))`)
+        .eq('status', 'Pago'); // Filtrando apenas os pagamentos com status "pago"
 
       if (error) {
-        console.error('Erro ao buscar manutenções:', error);
-        setLoading(false);
+        console.error('Erro ao buscar custo médio por grupo de problema:', error.message);
         return;
       }
 
-      if (data) {
-        setTotalMaintenances(data.length);
-        setTotalCost(totalPaymentCost);
+      // Agrupando e somando os custos
+      const groupedData = result.reduce((acc: Record<string, { moeda: string; grupoProblema: string; custoTotal: number; count: number }>, item) => {
+        const groupName = item.maintenance?.problem_group?.nome; // Obter o nome do grupo
+        const currency = item.cost_center?.moeda; // Obter a moeda
 
-        const monthlyCount: Record<string, number> = {};
-        data.forEach((maintenance: Maintenance) => {
-          const month = format(new Date(maintenance.data_problema), 'MMMM yyyy', { locale: ptBR });
-          const capitalizedMonth = month.charAt(0).toUpperCase() + month.slice(1);
-          if (!monthlyCount[capitalizedMonth]) {
-            monthlyCount[capitalizedMonth] = 0;
-          }
-          monthlyCount[capitalizedMonth]++;
-        });
+        if (!groupName || !currency) return acc; // Se não tiver grupo ou moeda, ignorar
 
-        setMonthlyMaintenances(monthlyCount);
-      }
-      setLoading(false);
+        const key = `${currency}-${groupName}`; // Chave para identificação única
+
+        if (!acc[key]) {
+          acc[key] = { moeda: currency, grupoProblema: groupName, custoTotal: 0, count: 0 };
+        }
+        acc[key].custoTotal += item.custo; // Somar o custo
+        acc[key].count += 1; // Contar a manutenção
+        return acc;
+      }, {});
+
+      // Calculando a média para cada grupo por moeda
+      const averageData = Object.values(groupedData).map(item => ({
+        moeda: item.moeda,
+        grupoProblema: item.grupoProblema,
+        custoMedio: item.count > 0 ? item.custoTotal / item.count : 0, // Calcular a média
+      }));
+
+      setData(averageData);
     };
 
-    fetchMaintenances();
+    fetchAverageCostByProblemGroup();
   }, []);
 
+  // Função para formatar o valor em Reais
+  const formatCurrency = (value: number, currency: string) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency,
+    }).format(value);
+  };
+
   return (
-    <Card className="bg-background shadow-md rounded-lg border border-border p-2 flex flex-col justify-center text-center">
+    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col items-stretch justify-center">
       <CardHeader>
-        <CardTitle className="text-2xl font-semibold text-primary text-center">
-          Total de Manutenções Finalizadas
+        <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">
+          Custo Médio por Grupo e Centro de Custo
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {loading ? (
-          <div className="flex justify-center">
-            <Loader2 className="animate-spin" />
-          </div>
-        ) : (
-          <div>
-            <p className="text-4xl font-bold text-red-500"> 
-              {totalMaintenances}
-            </p>
-            <p className="text-2xl font-bold text-green-500"> 
-              Custo Total: {formatCurrency(totalCost, 'BRL')} {/* Troque 'BRL' se necessário */}
-            </p>
-            <div className="mt-4">
-              <h3 className="text-md p-1 font-bold">Manutenções por Mês:</h3>
-              <ul>
-                {Object.keys(monthlyMaintenances).map((month) => (
-                  <li key={month} className="text-sm">
-                    {month}: {monthlyMaintenances[month]}{' '}
-                    {monthlyMaintenances[month] === 1 ? 'manutenção' : 'manutenções'}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        )}
+        <ul className="space-y-2">
+          {data.length > 0 ? (
+            data.map((item) => (
+              <li key={`${item.moeda}-${item.grupoProblema}`} className="flex justify-between text-xl text-primary font-medium">
+                {item.grupoProblema.charAt(0).toUpperCase() + item.grupoProblema.slice(1)} ({item.moeda}):
+                <span className="font-bold text-red-500">{formatCurrency(item.custoMedio, item.moeda)}</span>
+              </li>
+            ))
+          ) : (
+            <li className="text-xs text-primary font-medium">Nenhum dado encontrado.</li>
+          )}
+        </ul>
       </CardContent>
     </Card>
   );
-}
+};
+
+export default AverageCostByProblemGroup;

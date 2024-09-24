@@ -2,41 +2,96 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Card } from '@/components/ui/card';
+import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
+
+interface CostData {
+  moeda: string;
+  total: number;
+}
 
 const TotalCost = () => {
-  const [totalCost, setTotalCost] = useState<number | null>(null);
+  const [costsByCurrency, setCostsByCurrency] = useState<CostData[]>([]);
 
   useEffect(() => {
     const fetchTotalCost = async () => {
       const { data, error } = await supabase
         .from('payment')
-        .select('custo');
+        .select(`
+          custo,
+          cost_center (
+            moeda
+          ),
+          maintenance (
+            status
+          )
+        `)
+        .eq('status', 'Pago') // Filtrar pagamentos com status 'Pago'
+        .eq('maintenance.status', 'Finalizada'); // Filtrar manutenções com status 'Finalizada'
 
       if (error) {
         console.error('Erro ao buscar custo total:', error.message);
         return;
       }
 
-      // Calcular o custo total
-      const total = data.reduce((acc, curr) => acc + parseFloat(curr.custo || '0'), 0);
-      setTotalCost(total);
+      const totals: { [key: string]: number } = {};
+      data.forEach(item => {
+        const currency = item.cost_center.moeda;
+        const cost = parseFloat(item.custo || '0');
+
+        if (totals[currency]) {
+          totals[currency] += cost;
+        } else {
+          totals[currency] = cost;
+        }
+      });
+
+      const costArray: CostData[] = Object.entries(totals).map(([moeda, total]) => ({
+        moeda,
+        total
+      }));
+
+      setCostsByCurrency(costArray);
     };
 
     fetchTotalCost();
   }, []);
 
-  const formatCurrency = (value: number | null) => {
-    if (value === null) return 'Carregando...';
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  const formatCurrency = (value: number, currency: string) => {
+    // Define a locale e a moeda correta com base no país
+    const locales: { [key: string]: string } = {
+      'BRL': 'pt-BR', // Brasil
+      'ARS': 'es-AR', // Argentina
+      'CLP': 'es-CL', // Chile
+      'PYG': 'es-PY', // Paraguai
+      'UYU': 'es-UY'  // Uruguai
+    };
+
+    const formattedValue = new Intl.NumberFormat(locales[currency], { 
+      style: 'currency', 
+      currency 
+    }).format(value);
+
+    return formattedValue;
   };
 
   return (
     <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col justify-center items-center">
-      <h3 className="text-xl font-semibold text-primary text-center mb-4">Custo Total</h3>
-      <p className="text-3xl font-bold text-red-500">
-        {formatCurrency(totalCost)}
-      </p>
+      <CardHeader>
+        <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">
+          Custo Total por Moeda
+        </CardTitle>
+      </CardHeader> 
+      <CardContent>
+        {costsByCurrency.length > 0 ? (
+          costsByCurrency.map((costData) => (
+            <p key={costData.moeda} className="text-3xl font-bold text-red-500">
+              {costData.moeda} {formatCurrency(costData.total, costData.moeda)}
+            </p>
+          ))
+        ) : (
+          <p className="text-3xl font-bold text-red-500">Sem dados disponíveis</p>
+        )}
+      </CardContent>      
     </Card>
   );
 };

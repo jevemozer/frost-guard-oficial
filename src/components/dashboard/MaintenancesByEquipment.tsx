@@ -9,10 +9,25 @@ const MaintenancesAverageByEquipment = () => {
 
   useEffect(() => {
     const fetchMaintenancesData = async () => {
-      // Contar total de manutenções
+      // Buscar os maintenance_id onde o status é "Pago"
+      const { data: paymentData, error: paymentError } = await supabase
+        .from('payment')
+        .select('maintenance_id')
+        .eq('status', 'Pago');
+
+      if (paymentError) {
+        console.error('Erro ao buscar pagamentos:', paymentError.message);
+        return;
+      }
+
+      const maintenanceIds = paymentData?.map((payment) => payment.maintenance_id) || [];
+
+      // Contar total de manutenções "Finalizadas" e pagas
       const { data: maintenanceData, error: maintenanceError } = await supabase
         .from('maintenance')
-        .select('*', { count: 'exact' });
+        .select('*', { count: 'exact' })
+        .eq('status', 'Finalizada')
+        .in('id', maintenanceIds);
 
       if (maintenanceError) {
         console.error('Erro ao buscar manutenções:', maintenanceError.message);
@@ -42,9 +57,9 @@ const MaintenancesAverageByEquipment = () => {
   }, []);
 
   return (
-    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col justify-center text-center">
+    <Card className="bg-background shadow-md rounded-lg border border-border p-2 flex flex-col justify-center text-center">
       <CardHeader>
-        <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">Média de Manutenções</CardTitle>
+        <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">Média de Manutenções por Equipamento</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="text-4xl font-bold text-red-500">

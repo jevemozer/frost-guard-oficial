@@ -105,7 +105,7 @@ const Sidebar = () => {
                 </Link>
               </li>
               <li className="py-4 hover:bg-emerald-400 rounded">
-                <Link href="/manutencao">
+                <Link href="/maintenance">
                   <Calendar className="inline mr-2" />
                   Manutenções
                 </Link>

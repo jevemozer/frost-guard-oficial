@@ -1,121 +1,112 @@
-"use client";
+"use client"
 
-import * as React from "react";
-import { Label, Pie, PieChart } from "recharts";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import { supabase } from "@/lib/supabase";
+// src/app/components/TotalMaintenances.tsx
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale'; // Importa o locale pt-BR
+import { Loader2 } from 'lucide-react';
 
-// Configuração do gráfico
-const chartConfig = {
-  manutenções: {
-    label: "Manutenções",
-  },
-} satisfies ChartConfig;
-
-// Definindo o tipo para os dados da manutenção
-type MaintenanceData = {
+type Maintenance = {
+  id: string;
   data_problema: string;
+  status: string;
 };
 
-// Mudando o tipo de dados esperado para a consulta
-type SupabaseResponse<T> = {
-  data: T[] | null;
-  error: any;
-};
+export default function TotalMaintenances() {
+  const [totalMaintenances, setTotalMaintenances] = useState<number>(0);
+  const [monthlyMaintenances, setMonthlyMaintenances] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
 
-export default function TotalMaintenancesChart() {
-  const [chartData, setChartData] = React.useState<{ month: string; count: number; fill: string; }[]>([]);
-  const [totalMaintenances, setTotalMaintenances] = React.useState<number>(0);
+  useEffect(() => {
+    const fetchMaintenances = async () => {
+      setLoading(true);
 
-  React.useEffect(() => {
-    const fetchMaintenanceData = async () => {
-      const { data, error }: SupabaseResponse<MaintenanceData> = await supabase
-        .from<MaintenanceData>("maintenance")
-        .select("data_problema")
-        .order("data_problema", { ascending: true });
+      // Primeiro, busque os maintenance_id onde o status é "Pago"
+      const { data: paymentData, error: paymentError } = await supabase
+        .from('payment')
+        .select('maintenance_id')
+        .eq('status', 'Pago');
+
+      if (paymentError) {
+        console.error('Erro ao buscar pagamentos:', paymentError);
+        setLoading(false);
+        return;
+      }
+
+      const maintenanceIds = paymentData?.map((payment) => payment.maintenance_id) || [];
+
+      // Em seguida, busque as manutenções com os ids obtidos e status "Finalizada"
+      const { data, error } = await supabase
+        .from('maintenance')
+        .select('id, data_problema, status')
+        .eq('status', 'Finalizada')
+        .in('id', maintenanceIds);
 
       if (error) {
-        console.error("Erro ao buscar manutenções:", error.message);
+        console.error('Erro ao buscar manutenções:', error);
+        setLoading(false);
         return;
       }
 
-      if (!data) {
-        console.error("Nenhum dado encontrado.");
-        return;
-      }
+      if (data) {
+        // Número total de manutenções
+        setTotalMaintenances(data.length);
 
-      const groupedData = data.reduce((acc: Record<string, number>, curr: MaintenanceData) => {
-        // Formatar para 'MM/YYYY' para evitar sobreposição entre diferentes anos
-        const monthYear = new Date(curr.data_problema).toLocaleString("default", {
-          month: "long",
-          year: "numeric",
+        // Agrupar manutenções por mês
+        const monthlyCount: Record<string, number> = {};
+        data.forEach((maintenance: Maintenance) => {
+          const month = format(new Date(maintenance.data_problema), 'MMMM yyyy', {
+            locale: ptBR,
+          });
+
+          const capitalizedMonth = month.charAt(0).toUpperCase() + month.slice(1);
+
+          if (!monthlyCount[capitalizedMonth]) {
+            monthlyCount[capitalizedMonth] = 0;
+          }
+          monthlyCount[capitalizedMonth]++;
         });
 
-        acc[monthYear] = (acc[monthYear] || 0) + 1;
-        return acc;
-      }, {});
-
-      const formattedData = Object.entries(groupedData).map(([month, count], index) => ({
-        month,
-        count,
-        fill: `var(--emerald-${Math.min(500 + index * 100, 900)})`, // Cores emerald
-      }));
-
-      setChartData(formattedData);
-      setTotalMaintenances(formattedData.reduce((acc, curr) => acc + curr.count, 0));
+        setMonthlyMaintenances(monthlyCount);
+      }
+      setLoading(false);
     };
 
-    fetchMaintenanceData();
+    fetchMaintenances();
   }, []);
 
   return (
-    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col">
-      <CardHeader className="text-xl p-2 font-semibold text-primary text-center mb-4">
-        <CardTitle>Manutenções Realizadas por Mês</CardTitle>
-        <CardDescription className="text-background">Dados de 2024</CardDescription>
+    <Card className="bg-background shadow-md rounded-lg border border-border p-2 flex flex-col justify-center text-center">
+      <CardHeader>
+        <CardTitle className="text-2xl font-semibold text-primary text-center">
+          Total de Manutenções Finalizadas
+        </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 pb-0">
-        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px]">
-          <PieChart>
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent hideLabel />}
-              position={{ x: -50, y: 100 }}
-              className="bg-primary-foreground text-xl rounded-md p-2 shadow-lg text-primary-foreground"
-            />
-            <Pie data={chartData} dataKey="count" nameKey="month" innerRadius={60} strokeWidth={5}>
-              <Label 
-                content={({ viewBox }) => {
-                  if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                    return (
-                      <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
-                        <tspan x={viewBox.cx} y={viewBox.cy} className="fill-foreground text-4xl font-bold">
-                          {totalMaintenances.toLocaleString()}
-                        </tspan>
-                        <tspan x={viewBox.cx} y={(viewBox.cy || 0) + 24} className="fill-muted-foreground text-primary">
-                          Manutenções
-                        </tspan>
-                      </text>
-                    );
-                  }
-                  return null;
-                }}
-              />
-            </Pie>
-          </PieChart>
-        </ChartContainer>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center">
+            <Loader2 className="animate-spin" />
+          </div>
+        ) : (
+          <div>
+            <p className="text-4xl font-bold text-red-500"> 
+              {totalMaintenances}
+            </p>
+            <div className="mt-4">
+              <h3 className="text-md p-1 font-bold">Manutenções por Mês:</h3>
+              <ul>
+                {Object.keys(monthlyMaintenances).map((month) => (
+                  <li key={month} className="text-sm">
+                    {month}: {monthlyMaintenances[month]}{' '}
+                    {monthlyMaintenances[month] === 1 ? 'manutenção' : 'manutenções'}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

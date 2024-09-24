@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Card } from '@/components/ui/card';
+import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
 
 interface ProblemGroupCost {
   nome: string;
   custo: number;
+  quantidade: number; // Adicionando o campo para quantidade
+  moeda: string; // Adicionando campo para moeda
 }
 
 const CostByProblemGroup = () => {
@@ -14,51 +16,86 @@ const CostByProblemGroup = () => {
 
   useEffect(() => {
     const fetchCostByProblemGroup = async () => {
-      const { data: result, error } = await supabase
-        .from('payment')
+      const { data: payments, error: paymentError } = await supabase
+        .from('payment') // Definindo o tipo para 'payment'
         .select(`
           custo,
-          maintenance (problem_group_id, problem_group (nome))
+          cost_center (
+            moeda
+          ),
+          maintenance (
+            problem_group_id,
+            problem_group (nome),
+            status
+          )
         `)
-        .eq('status', 'pago'); // Filtrando apenas os pagamentos com status "pago"
+        .eq('status', 'Pago'); // Usando "Pago" com letra maiúscula
 
-      if (error) {
-        console.error('Erro ao buscar custo por grupo de problema:', error.message);
+      if (paymentError) {
+        console.error('Erro ao buscar pagamentos:', paymentError.message);
         return;
       }
 
-      const groupedData = result.reduce((acc: Record<string, { nome: string; custo: number }>, item: any) => {
+      const groupedData = payments.reduce((acc: Record<string, { nome: string; custo: number; quantidade: number; moeda: string }>, item: any) => {
         const groupName = item.maintenance?.problem_group?.nome; // Obtendo o nome do grupo de problema
-        if (!groupName) return acc; // Se não tiver grupo, ignorar
+        const status = item.maintenance?.status; // Obtendo o status da manutenção
+        const currency = item.cost_center?.moeda; // Obtendo a moeda
 
-        if (!acc[groupName]) {
-          acc[groupName] = { nome: groupName, custo: 0 };
+        if (!groupName || status !== 'Finalizada' || !currency) return acc; // Ignorando se não tiver grupo ou não for finalizada
+
+        const key = `${groupName}-${currency}`; // Criando uma chave única por grupo de problema e moeda
+
+        if (!acc[key]) {
+          acc[key] = { nome: groupName, custo: 0, quantidade: 0, moeda: currency }; // Inicializando a quantidade e a moeda
         }
-        acc[groupName].custo += parseFloat(item.custo); // Somar o custo
+        acc[key].custo += parseFloat(item.custo.toString()); // Somando o custo
+        acc[key].quantidade += 1; // Incrementando a quantidade
         return acc;
       }, {});
 
-      setData(Object.values(groupedData));
+      const resultData = Object.values(groupedData).map(item => ({
+        ...item,
+        custo: item.custo / item.quantidade // Calculando o custo médio
+      }));
+
+      setData(resultData); // Atualizando o estado com os dados agrupados
     };
 
     fetchCostByProblemGroup();
   }, []);
 
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const formatCurrency = (value: number, currency: string) => {
+    const options: Intl.NumberFormatOptions = {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    };
+    
+    return value.toLocaleString('pt-BR', options);
   };
 
   return (
-    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col">
-      <h3 className="text-xl font-semibold text-primary text-center mb-4">Custo por Grupo de Problema</h3>
-      <ul className="space-y-2">
-        {data.map((item) => (
-          <li key={item.nome} className="p-3 rounded-md text-primary bg-muted flex justify-between items-center">
-            <span>{item.nome.charAt(0).toUpperCase()+item.nome.slice(1)}</span>
-            <span className="font-bold text-red-500">{formatCurrency(item.custo)}</span>
-          </li>
-        ))}
-      </ul>
+    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col items-stretch justify-center">
+      <CardHeader>
+        <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">
+          Custo por Grupo
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-2">
+          {data.map((item) => (
+            <li key={`${item.nome}-${item.moeda}`} className="flex justify-between text-xl text-primary font-medium">
+              <span className="text-xl text-primary font-medium">
+                {item.nome.charAt(0).toUpperCase() + item.nome.slice(1)} ({item.quantidade})
+              </span>
+              <span className="font-bold text-red-500">
+                {formatCurrency(item.custo, item.moeda)} 
+              </span>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
     </Card>
   );
 };

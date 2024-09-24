@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Card } from '@/components/ui/card';
+import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 
 const Top20CostlyEquipment = () => {
   const [data, setData] = useState<{ equipamento: string; custo: number }[]>([]);
@@ -15,26 +16,43 @@ const Top20CostlyEquipment = () => {
       setError(null);
 
       try {
-        // Obter manutenções concluídas
-        const { data: maintenances, error: maintenanceError } = await supabase
-          .from('maintenance')
-          .select('id, equipment_id')
-          .eq('status', 'concluída');
+        // Obter o id do centro de custo Brasil
+        const { data: costCenters, error: costCenterError } = await supabase
+          .from('cost_center')
+          .select('id')
+          .eq('nome', 'Brasil'); // Filtrando pelo nome do centro de custo
 
-        if (maintenanceError) throw new Error(maintenanceError.message);
-
-        if (!maintenances.length) {
-          setError('Nenhuma manutenção concluída encontrada.');
+        if (costCenterError) throw new Error(costCenterError.message);
+        if (!costCenters.length) {
+          setError('Centro de custo Brasil não encontrado.');
           setLoading(false);
           return;
         }
 
-        // Obter pagamentos relacionados às manutenções
+        const brasilCostCenterId = costCenters[0].id;
+
+        // Obter manutenções concluídas
+        const { data: maintenances, error: maintenanceError } = await supabase
+          .from('maintenance')
+          .select('id, equipment_id')
+          .eq('status', 'Finalizada'); // Modificado para 'Finalizada'
+
+        if (maintenanceError) throw new Error(maintenanceError.message);
+
+        if (!maintenances.length) {
+          setError('Nenhuma manutenção finalizada encontrada.');
+          setLoading(false);
+          return;
+        }
+
+        // Obter pagamentos relacionados às manutenções com status 'Pago' e do centro de custo Brasil
         const maintenanceIds = maintenances.map(m => m.id);
         const { data: payments, error: paymentError } = await supabase
           .from('payment')
           .select('maintenance_id, custo')
-          .in('maintenance_id', maintenanceIds);
+          .in('maintenance_id', maintenanceIds)
+          .eq('status', 'Pago') // Filtrando apenas pagamentos com status 'Pago'
+          .eq('cost_center_id', brasilCostCenterId); // Filtrando pelo centro de custo Brasil
 
         if (paymentError) throw new Error(paymentError.message);
 
@@ -82,26 +100,34 @@ const Top20CostlyEquipment = () => {
   if (loading) return <Card>Carregando...</Card>;
 
   return (
-    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col">
-      <h3 className="text-xl font-semibold text-primary text-center mb-4">Top 20 Equipamentos Mais Caros</h3>
-      {error ? (
-        <div className="text-red-600">{error}</div>
-      ) : (
-        <ul className="space-y-2">
-          {data.length > 0 ? (
-            data.map((item) => (
-              <li key={item.equipamento} className="p-3 rounded-md text-primary bg-muted flex justify-between items-center">
-                Frota {item.equipamento}: 
-                <span className="font-bold text-red-500">
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.custo)}
-                </span>
-              </li>
-            ))
-          ) : (
-            <li className="p-2 rounded bg-background text-muted-foreground border border-border">Nenhum dado encontrado.</li>
-          )}
-        </ul>
-      )}
+    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col items-stretch justify-center">
+      <CardHeader>
+        <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">
+        Top 20 Equipamentos Mais Caros (Brasil)
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center">
+          <Loader2 className="animate-spin" />
+        </div>
+        ) : (
+          <ul className="space-y-2">
+            {data.length > 0 ? (
+              data.map((item) => (
+                <li key={item.equipamento} className="flex justify-between text-xl text-primary font-medium">
+                  Frota {item.equipamento}:
+                  <span className="font-bold text-red-500">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.custo)}
+                  </span>
+                </li>
+              ))
+            ) : (
+              <li className="text-xs text-primary font-medium">Nenhum dado encontrado.</li>
+            )}
+          </ul>
+        )}
+      </CardContent>
     </Card>
   );
 };

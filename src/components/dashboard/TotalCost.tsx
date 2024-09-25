@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
-import { convertToBRL } from '@/app/api/currencyConversion'; // Importa a função de conversão
+import { convertToBRL } from '@/lib/currencyConversion'; // Importa a função de conversão
 
 interface PaymentData {
   custo: string;

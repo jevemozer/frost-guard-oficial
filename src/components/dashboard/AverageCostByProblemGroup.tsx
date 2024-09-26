@@ -1,101 +1,121 @@
-"use client"; // Adicione esta linha
+"use client";
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
+import { convertToBRL } from '@/lib/currencyConversion'; // Importando a função de conversão
+import { Loader2 } from 'lucide-react'; // Importando o Loader2 do Lucide
 
-interface Payment {
-  custo: number;
-  cost_center: {
-    moeda: string;
-  };
-  maintenance: {
-    problem_group_id: string;
-    problem_group: {
-      nome: string;
-    };
-  };
-}
-
-interface AverageCostData {
-  moeda: string;
-  grupoProblema: string;
-  custoMedio: number;
+interface ProblemGroupAverageCost {
+  nome: string;
+  mediaCusto: number; // Custo médio em BRL
+  quantidade: number; // Quantidade de manutenções
 }
 
 const AverageCostByProblemGroup = () => {
-  const [data, setData] = useState<AverageCostData[]>([]);
+  const [data, setData] = useState<ProblemGroupAverageCost[]>([]);
+  const [loading, setLoading] = useState<boolean>(true); // Estado para controle de carregamento
 
   useEffect(() => {
     const fetchAverageCostByProblemGroup = async () => {
-      const { data: result, error } = await supabase
-        .from<Payment>('payment')
-        .select(`custo, cost_center (moeda), maintenance (problem_group_id, problem_group (nome))`)
-        .eq('status', 'Pago'); // Filtrando apenas os pagamentos com status "pago"
+      setLoading(true); // Inicia o loading
 
-      if (error) {
-        console.error('Erro ao buscar custo médio por grupo de problema:', error.message);
+      const { data: payments, error: paymentError } = await supabase
+        .from('payment')
+        .select(`
+          custo,
+          cost_center (
+            moeda
+          ),
+          maintenance (
+            problem_group_id,
+            problem_group (nome),
+            status
+          )
+        `)
+        .eq('status', 'Pago'); // Filtrando manutenções pagas
+
+      if (paymentError) {
+        console.error('Erro ao buscar pagamentos:', paymentError.message);
+        setLoading(false); // Finaliza o loading em caso de erro
         return;
       }
 
-      // Agrupando e somando os custos
-      const groupedData = result.reduce((acc: Record<string, { moeda: string; grupoProblema: string; custoTotal: number; count: number }>, item) => {
-        const groupName = item.maintenance?.problem_group?.nome; // Obter o nome do grupo
-        const currency = item.cost_center?.moeda; // Obter a moeda
+      // Conversão e agrupamento
+      const groupedData: Record<string, { totalCusto: number; quantidade: number }> = {};
 
-        if (!groupName || !currency) return acc; // Se não tiver grupo ou moeda, ignorar
+      // Processando pagamentos
+      for (const item of payments) {
+        const groupName = item.maintenance?.problem_group?.nome; // Nome do grupo de problema
+        const currency = item.cost_center?.moeda; // Moeda
 
-        const key = `${currency}-${groupName}`; // Chave para identificação única
+        if (!groupName || !currency) continue; // Ignorar se não houver nome do grupo ou moeda
 
-        if (!acc[key]) {
-          acc[key] = { moeda: currency, grupoProblema: groupName, custoTotal: 0, count: 0 };
+        // Converter custo para BRL
+        const convertedCost = await convertToBRL(parseFloat(item.custo.toString()), currency);
+        const costInBRL = convertedCost?.convertedAmount || 0;
+
+        // Inicializar dados do grupo se não existir
+        if (!groupedData[groupName]) {
+          groupedData[groupName] = { totalCusto: 0, quantidade: 0 }; // Inicializar valores do grupo
         }
-        acc[key].custoTotal += item.custo; // Somar o custo
-        acc[key].count += 1; // Contar a manutenção
-        return acc;
-      }, {});
 
-      // Calculando a média para cada grupo por moeda
-      const averageData = Object.values(groupedData).map(item => ({
-        moeda: item.moeda,
-        grupoProblema: item.grupoProblema,
-        custoMedio: item.count > 0 ? item.custoTotal / item.count : 0, // Calcular a média
+        // Acumular valores
+        groupedData[groupName].totalCusto += costInBRL; // Acumular custo total em BRL
+        groupedData[groupName].quantidade += 1; // Contar o número de manutenções para o grupo
+      }
+
+      // Transformar dados agrupados em um array com média
+      const resultData = Object.entries(groupedData).map(([nome, { totalCusto, quantidade }]) => ({
+        nome,
+        mediaCusto: quantidade > 0 ? totalCusto / quantidade : 0, // Calcular média
+        quantidade,
       }));
 
-      setData(averageData);
+      setData(resultData); // Atualizando o estado com os dados agrupados
+      setLoading(false); // Finaliza o loading
     };
 
     fetchAverageCostByProblemGroup();
   }, []);
 
-  // Função para formatar o valor em Reais
   const formatCurrency = (value: number, currency: string) => {
-    return new Intl.NumberFormat('pt-BR', {
+    const options: Intl.NumberFormatOptions = {
       style: 'currency',
       currency,
-    }).format(value);
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    };
+
+    return value.toLocaleString('pt-BR', options);
   };
 
   return (
     <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col items-stretch justify-center">
       <CardHeader>
         <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">
-          Custo Médio por Grupo e Centro de Custo
+          Custo Médio por Grupo
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ul className="space-y-2">
-          {data.length > 0 ? (
-            data.map((item) => (
-              <li key={`${item.moeda}-${item.grupoProblema}`} className="flex justify-between text-xl text-primary font-medium">
-                {item.grupoProblema.charAt(0).toUpperCase() + item.grupoProblema.slice(1)} ({item.moeda}):
-                <span className="font-bold text-red-500">{formatCurrency(item.custoMedio, item.moeda)}</span>
+        {loading ? (
+            <div className="flex justify-center items-center text-xl font-normal">
+            <Loader2 className="animate-spin h-5 w-5 mr-2 text-primary" /> Carregando dados...
+            </div>
+        ) : (
+          <ul className="space-y-2">
+            {data.map((item) => (
+              <li key={item.nome} className="flex justify-between text-xl text-primary font-medium">
+                <span className="text-xl text-primary font-medium">
+                  {item.nome.charAt(0).toUpperCase() + item.nome.slice(1)} ({item.quantidade})
+                </span>
+                <span className="font-bold text-red-500">
+                  {formatCurrency(item.mediaCusto, 'BRL')}
+                </span>
               </li>
-            ))
-          ) : (
-            <li className="text-xs text-primary font-medium">Nenhum dado encontrado.</li>
-          )}
-        </ul>
+            ))}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );

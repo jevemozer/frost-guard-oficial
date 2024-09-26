@@ -110,7 +110,7 @@ export default function CostByCostCenter() {
       });
 
       // Convertendo os custos para a moeda local
-      const convertedCostData = {};
+      const convertedCostData: Record<string, { totalCost: number; maintenanceCount: number; currency: string }> = {};
       Object.entries(costByCenter).forEach(([costCenterId, { totalCost, maintenanceCount, currency }]) => {
         const conversionRate = currencyConversionRates[currency] || 1; // Taxa de conversão padrão
         const convertedCost = totalCost / conversionRate; // Convertendo para BRL ou padrão definido
@@ -124,6 +124,13 @@ export default function CostByCostCenter() {
     fetchCosts();
   }, []);
 
+  const formatCurrency = (amount: number, currency: string) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
+  };
+
   return (
     <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col items-stretch justify-center">
       <CardHeader>
@@ -133,19 +140,19 @@ export default function CostByCostCenter() {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="flex justify-center">
-            <Loader2 className="animate-spin" />
+          <div className="flex justify-center items-center h-32">
+            <Loader2 className="animate-spin h-5 w-5 mr-2 text-primary" /> Carregando dados...
           </div>
         ) : (
           <div>
-            <ul className='"space-y-2"' >
+            <ul className="space-y-2">
               {Object.entries(costData).map(([costCenterId, { totalCost, maintenanceCount, currency }]) => (
                 <li key={costCenterId} className="flex justify-between text-xl text-primary font-medium">
                   <span>
-                  {costCenterNames[costCenterId] || costCenterId} ({maintenanceCount})
+                    {costCenterNames[costCenterId] || costCenterId} ({maintenanceCount})
                   </span>
                   <span className="font-bold text-red-500">
-                  {currency} {totalCost.toFixed(2)}
+                    {formatCurrency(totalCost, currency)}
                   </span>
                 </li>
               ))}

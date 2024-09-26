@@ -1,97 +1,104 @@
-"use client"; // Adicione esta linha
+"use client"; // Necessário para rodar no lado do cliente
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
+import { convertToBRL } from '@/lib/currencyConversion'; // Importa a função de conversão
+import { Loader2 } from 'lucide-react'; // Importa o Loader2 do Lucide
 
-interface CostData {
-  moeda: string;
-  total: number;
+interface PaymentData {
+  custo: string;
+  cost_center: {
+    moeda: string;
+  };
+  maintenance: {
+    status: string;
+  };
+  data_vencimento: string;
 }
 
 const TotalCost = () => {
-  const [costsByCurrency, setCostsByCurrency] = useState<CostData[]>([]);
+  const [totalInBRL, setTotalInBRL] = useState<number>(0); // Total em BRL
+  const [error, setError] = useState<string | null>(null); // Estado para armazenar erros
+  const [loading, setLoading] = useState<boolean>(true); // Estado de loading
 
   useEffect(() => {
+    // Função assíncrona para buscar e calcular o total
     const fetchTotalCost = async () => {
-      const { data, error } = await supabase
-        .from('payment')
-        .select(`
-          custo,
-          cost_center (
-            moeda
-          ),
-          maintenance (
-            status
-          )
-        `)
-        .eq('status', 'Pago') // Filtrar pagamentos com status 'Pago'
-        .eq('maintenance.status', 'Finalizada'); // Filtrar manutenções com status 'Finalizada'
+      try {
+        const { data, error } = await supabase
+          .from('payment')
+          .select(`
+            custo,
+            cost_center (
+              moeda
+            ),
+            maintenance (
+              status
+            ),
+            data_vencimento
+          `)
+          .eq('maintenance.status', 'Finalizada'); // Filtra manutenções finalizadas
 
-      if (error) {
-        console.error('Erro ao buscar custo total:', error.message);
-        return;
-      }
-
-      const totals: { [key: string]: number } = {};
-      data.forEach(item => {
-        const currency = item.cost_center.moeda;
-        const cost = parseFloat(item.custo || '0');
-
-        if (totals[currency]) {
-          totals[currency] += cost;
-        } else {
-          totals[currency] = cost;
+        if (error) {
+          console.error('Erro ao buscar custos:', error.message);
+          setError('Erro ao buscar custos.'); // Atualiza o estado de erro
+          return;
         }
-      });
 
-      const costArray: CostData[] = Object.entries(totals).map(([moeda, total]) => ({
-        moeda,
-        total
-      }));
+        let totalBRL = 0; // Inicializa o total em BRL
 
-      setCostsByCurrency(costArray);
+        // Itera sobre os pagamentos e converte para BRL se necessário
+        for (const item of (data || []) as PaymentData[]) {
+          const currency = item.cost_center?.moeda;
+          const cost = parseFloat(item.custo || '0');
+
+          if (currency === 'BRL') {
+            totalBRL += cost; // Se já for BRL, apenas adiciona ao total
+          } else if (currency && cost) {
+            try {
+              // Converte para BRL usando a função de conversão
+              const result = await convertToBRL(cost, currency);
+              totalBRL += result?.convertedAmount || 0; // Garante que será somado 0 em caso de falha na conversão
+            } catch (error) {
+              console.error(`Erro ao converter ${currency} para BRL:`, error);
+            }
+          }
+        }
+
+        // Atualiza o total em BRL no estado
+        setTotalInBRL(totalBRL);
+      } catch (error) {
+        console.error('Erro geral ao calcular o custo total:', error);
+        setError('Erro geral ao calcular o custo total.');
+      } finally {
+        setLoading(false); // Define loading como false após a tentativa de fetch
+      }
     };
 
     fetchTotalCost();
-  }, []);
-
-  const formatCurrency = (value: number, currency: string) => {
-    // Define a locale e a moeda correta com base no país
-    const locales: { [key: string]: string } = {
-      'BRL': 'pt-BR', // Brasil
-      'ARS': 'es-AR', // Argentina
-      'CLP': 'es-CL', // Chile
-      'PYG': 'es-PY', // Paraguai
-      'UYU': 'es-UY'  // Uruguai
-    };
-
-    const formattedValue = new Intl.NumberFormat(locales[currency], { 
-      style: 'currency', 
-      currency 
-    }).format(value);
-
-    return formattedValue;
-  };
+  }, []); // Executa quando o componente é montado
 
   return (
     <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col justify-center items-center">
       <CardHeader>
         <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">
-          Custo Total por Moeda
+          Custo Total
         </CardTitle>
-      </CardHeader> 
+      </CardHeader>
       <CardContent>
-        {costsByCurrency.length > 0 ? (
-          costsByCurrency.map((costData) => (
-            <p key={costData.moeda} className="text-3xl font-bold text-red-500">
-              {costData.moeda} {formatCurrency(costData.total, costData.moeda)}
-            </p>
-          ))
+        {loading ? ( // Verifica se está carregando
+          <div className="flex justify-center items-center">
+            <Loader2 className="animate-spin h-5 w-5 mr-2 text-primary" /> Carregando dados...
+          </div>
+        ) : error ? (
+          <p className="text-red-500">{error}</p> // Exibe mensagem de erro
         ) : (
-          <p className="text-3xl font-bold text-red-500">Sem dados disponíveis</p>
+          <p className="text-3xl font-bold text-red-500">
+            R$ {totalInBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {/* Formata o total para BRL */}
+          </p>
         )}
-      </CardContent>      
+      </CardContent>
     </Card>
   );
 };

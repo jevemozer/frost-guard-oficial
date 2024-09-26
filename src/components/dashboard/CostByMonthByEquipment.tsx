@@ -4,21 +4,39 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
 import { convertToBRL } from '@/lib/currencyConversion';
-import { Loader2 } from 'lucide-react'; 
+import { Loader2 } from 'lucide-react'; // Importando o Loader2
 
 interface CostData {
   mes: string;
   custo: number;
   moeda: string;
+  custoMedioPorEquipamento: number;
 }
 
-const CostByMonth = () => {
+const CostByMonthByEquipment = () => {
   const [data, setData] = useState<CostData[]>([]);
+  const [totalEquipments, setTotalEquipments] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true); // Estado de carregamento
 
+  // Função para buscar o número total de equipamentos cadastrados
+  const fetchEquipmentCount = async () => {
+    const { count, error } = await supabase
+      .from('equipment')
+      .select('id', { count: 'exact' }); // Contar o número de equipamentos sem limitar
+
+    if (error) {
+      console.error('Erro ao buscar o número de equipamentos:', error.message);
+      return;
+    }
+
+    if (count) {
+      setTotalEquipments(count); // Atualiza com a contagem exata
+    }
+  };
+
   useEffect(() => {
-    const fetchCostByMonth = async () => {
-      setLoading(true); // Começa o carregamento
+    const fetchCostByMonthByEquipment = async () => {
+      setLoading(true); // Iniciar o carregamento
       const { data: result, error } = await supabase
         .from('payment')
         .select('payment_date, custo, cost_center(moeda), maintenance(status)')
@@ -27,15 +45,18 @@ const CostByMonth = () => {
 
       if (error) {
         console.error('Erro ao buscar custo por mês:', error.message);
-        setLoading(false); // Para o carregamento em caso de erro
+        setLoading(false); // Parar o carregamento
         return;
       }
 
       if (!result) {
         console.warn('Nenhum dado encontrado.');
-        setLoading(false); // Para o carregamento se não houver dados
+        setLoading(false); // Parar o carregamento
         return;
       }
+
+      // Buscar o número total de equipamentos
+      await fetchEquipmentCount();
 
       const monthlyCosts = await result.reduce<Promise<Record<string, number>>>(
         async (accPromise, curr) => {
@@ -62,23 +83,22 @@ const CostByMonth = () => {
         Promise.resolve({})
       );
 
-      const formattedData = Object.entries(monthlyCosts).map(
-        ([mes, custo]) => ({
+      const formattedData = Object.entries(monthlyCosts)
+        .map(([mes, custo]) => ({
           mes,
           custo: Number(custo),
           moeda: 'BRL',
-        })
-      );
+          custoMedioPorEquipamento: totalEquipments > 0 ? Number(custo) / totalEquipments : 0,
+        }))
+        // Ordenar os meses em ordem cronológica
+        .sort((a, b) => new Date(a.mes).getTime() - new Date(b.mes).getTime());
 
-      // Ordenar os meses cronologicamente
-      const sortedData = formattedData.sort((a, b) => a.mes.localeCompare(b.mes));
-
-      setData(sortedData);
-      setLoading(false); // Para o carregamento após os dados serem buscados
+      setData(formattedData);
+      setLoading(false); // Parar o carregamento
     };
 
-    fetchCostByMonth();
-  }, []);
+    fetchCostByMonthByEquipment();
+  }, [totalEquipments]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -92,28 +112,32 @@ const CostByMonth = () => {
   const formatMonth = (monthString: string) => {
     const [year, month] = monthString.split('-');
     const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-    return date.toLocaleString('default', { month: 'long' })
-      .charAt(0).toUpperCase() + date.toLocaleString('default', { month: 'long' }).slice(1); // Capitaliza a primeira letra
+    return date
+      .toLocaleString('default', { month: 'long' })
+      .charAt(0)
+      .toUpperCase() + date.toLocaleString('default', { month: 'long' }).slice(1); // Capitaliza a primeira letra
   };
 
   return (
     <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col justify-center">
       <CardHeader>
         <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">
-          Custo por Mês
+          Custo Médio por Equipamento por Mês
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {loading ? ( // Exibe o Loader2 enquanto os dados estão carregando
-          <div className="flex justify-center items-center">
+        {loading ? ( // Exibe o loader enquanto os dados estão sendo carregados
+            <div className="flex justify-center items-center text-xl font-normal">
             <Loader2 className="animate-spin h-5 w-5 mr-2 text-primary" /> Carregando dados...
-          </div>
+            </div>
         ) : (
           <ul className="space-y-2">
             {data.map((item) => (
               <li key={item.mes} className="flex justify-between text-xl text-primary font-medium">
                 <span className="mr-4">{formatMonth(item.mes)}</span>
-                <span className="font-bold text-red-500">{formatCurrency(item.custo)}</span>
+                <span className="font-bold text-red-500">
+                  {formatCurrency(item.custoMedioPorEquipamento)}
+                </span>
               </li>
             ))}
           </ul>
@@ -123,4 +147,4 @@ const CostByMonth = () => {
   );
 };
 
-export default CostByMonth;
+export default CostByMonthByEquipment;

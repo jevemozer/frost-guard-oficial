@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardTitle } from "@/components/ui/card";
+import { convertToBRL } from '@/lib/currencyConversion';
 
 interface EquipmentCost {
   moeda: string;
@@ -23,9 +24,12 @@ interface PaymentResult {
 const CostByEquipment = () => {
   const [costsByCurrency, setCostsByCurrency] = useState<EquipmentCost[]>([]);
   const [equipmentCount, setEquipmentCount] = useState<number>(0);
+  const [totalCostInBRL, setTotalCostInBRL] = useState<number>(0); // Adicionei esta linha
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchCostByEquipment = async () => {
+      setLoading(true);
       const { data: costResult, error: costError } = await supabase
         .from("payment")
         .select("custo, cost_center(moeda), maintenance(equipment_id, status)")
@@ -34,19 +38,21 @@ const CostByEquipment = () => {
 
       if (costError) {
         console.error("Erro ao buscar custo por equipamento:", costError);
+        setLoading(false);
         return;
       }
 
       if (!costResult || costResult.length === 0) {
         console.warn("Nenhum custo encontrado.");
+        setLoading(false);
         return;
       }
 
       const currencyCostsMap: { [key: string]: number } = {};
-      costResult.forEach((item: PaymentResult) => {
+      for (const item of costResult) {
         const { moeda } = item.cost_center;
         currencyCostsMap[moeda] = (currencyCostsMap[moeda] || 0) + item.custo;
-      });
+      }
 
       const { count: equipmentCount, error: countError } = await supabase
         .from("equipment")
@@ -54,25 +60,33 @@ const CostByEquipment = () => {
 
       if (countError) {
         console.error("Erro ao contar equipamentos:", countError);
+        setLoading(false);
         return;
       }
 
       setEquipmentCount(equipmentCount || 0);
 
-      const formattedData: EquipmentCost[] = Object.entries(currencyCostsMap).map(
-        ([moeda, total_cost]) => ({
-          moeda,
-          total_cost: total_cost / (equipmentCount || 1),
-        })
-      );
+      // Conversão dos custos para BRL
+      const formattedData: EquipmentCost[] = [];
+      let totalConvertedAmount = 0; // Adicionei esta variável
+
+      for (const [moeda, total_cost] of Object.entries(currencyCostsMap)) {
+        const { convertedAmount } = await convertToBRL(total_cost, moeda);
+        formattedData.push({
+          moeda: "BRL",
+          total_cost: convertedAmount / (equipmentCount || 1),
+        });
+        totalConvertedAmount += convertedAmount; // Acumula o total convertido
+      }
 
       setCostsByCurrency(formattedData);
+      setTotalCostInBRL(totalConvertedAmount / (equipmentCount || 1)); // Custo médio total em BRL
+      setLoading(false);
     };
 
     fetchCostByEquipment();
   }, []);
 
-  // Função para formatar o valor como moeda
   const formatCurrency = (value: number, currency: string) => {
     const currencyFormatOptions = {
       style: "currency",
@@ -81,46 +95,35 @@ const CostByEquipment = () => {
       maximumFractionDigits: 2,
     };
 
-    // Se a moeda não for uma das específicas, usamos a formatação padrão
-    switch (currency) {
-      case 'BRL':
-      case 'ARS':
-      case 'CLP':
-      case 'PYG':
-      case 'UYU':
-        return new Intl.NumberFormat("pt-BR", currencyFormatOptions).format(value);
-      default:
-        return value.toFixed(2).replace('.', ',') + ' ' + currency; // Formatação padrão sem símbolo
-    }
+    return new Intl.NumberFormat("pt-BR", currencyFormatOptions).format(value);
   };
 
   return (
     <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col justify-center">
-      <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">
+      <CardTitle className="text-2xl font-semibold text-primary text-center mb-6">
         Custo por Equipamento
       </CardTitle>
       <ul className="space-y-2">
-        <li className="flex justify-between text-xl text-primary font-medium">
-          <h4 className="text-xl text-primary font-medium">
-            Nº de Equipamentos:
-          </h4>
-          <span className="text-red-500 font-semibold">{equipmentCount}</span>
-        </li>
-        {costsByCurrency.length > 0 ? (
-          costsByCurrency.map((costData) => (
-            <li key={costData.moeda} className="flex justify-between text-xl text-primary font-medium">
+        {loading ? (
+          <li className="text-xl text-red-500 font-medium">Carregando dados...</li>
+        ) : costsByCurrency.length > 0 ? (
+          <>
+            <li className="flex justify-between text-xl text-primary font-medium">
               <h4 className="text-xl text-primary font-medium">
-                Custo Médio ({costData.moeda}):
+                Total Geral:
               </h4>
               <span className="text-red-500 font-semibold">
-                {formatCurrency(costData.total_cost, costData.moeda)}
+                {formatCurrency(totalCostInBRL, "BRL")}
               </span>
             </li>
-          ))
+          </>
         ) : (
           <li className="text-xl text-red-500 font-medium">Sem dados disponíveis</li>
         )}
       </ul>
+      <p className="text-center text-lg mt-4 text-foreground">
+          Total de Equipamentos: {equipmentCount}
+        </p>
     </Card>
   );
 };

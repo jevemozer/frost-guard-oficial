@@ -8,6 +8,7 @@ import AverageCostByProblemGroup from '@/components/dashboard/AverageCostByProbl
 import CostByCostCenter from '@/components/dashboard/CostByCostCenter';
 import Top20CostlyEquipment from '@/components/dashboard/Top20CostlyEquipment';
 import Top20MostMaintainedEquipment from '@/components/dashboard/Top20MostMaintainedEquipment';
+import CostByMonthByEquipment from './CostByMonthByEquipment';
 
 const Dashboard = () => {
   return (
@@ -17,6 +18,7 @@ const Dashboard = () => {
       <TotalMaintenances />
       <MaintenancesByEquipment />
       <CostByEquipment />
+      <CostByMonthByEquipment />
       <CostByProblemGroup />
       <AverageCostByProblemGroup />
       <CostByCostCenter />

@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
+import { convertToBRL } from '@/lib/currencyConversion'; // Importando a função de conversão
 
 interface ProblemGroupCost {
   nome: string;
-  custo: number;
+  custo: number; // Custo em BRL
   quantidade: number; // Adicionando o campo para quantidade
   moeda: string; // Adicionando campo para moeda
 }
@@ -41,21 +42,28 @@ const CostByProblemGroup = () => {
         const status = item.maintenance?.status; // Obtendo o status da manutenção
         const currency = item.cost_center?.moeda; // Obtendo a moeda
 
-        if (!groupName || status !== 'Finalizada' || !currency) return acc; // Ignorando se não tiver grupo ou não for finalizada
+        // Ignorando se não tiver grupo, se não for 'Pago', ou se não tiver moeda
+        if (!groupName || status !== 'Finalizada' || !currency) return acc; 
 
         const key = `${groupName}-${currency}`; // Criando uma chave única por grupo de problema e moeda
 
         if (!acc[key]) {
           acc[key] = { nome: groupName, custo: 0, quantidade: 0, moeda: currency }; // Inicializando a quantidade e a moeda
         }
-        acc[key].custo += parseFloat(item.custo.toString()); // Somando o custo
+        
+        // Somando o custo
+        acc[key].custo += parseFloat(item.custo.toString()); 
         acc[key].quantidade += 1; // Incrementando a quantidade
         return acc;
       }, {});
 
-      const resultData = Object.values(groupedData).map(item => ({
-        ...item,
-        custo: item.custo / item.quantidade // Calculando o custo médio
+      // Conversão dos custos para BRL
+      const resultData = await Promise.all(Object.values(groupedData).map(async (item) => {
+        const conversionResult = await convertToBRL(item.custo, item.moeda); // Converte o custo total
+        return {
+          ...item,
+          custo: conversionResult?.convertedAmount || 0, // Usando o valor convertido para BRL
+        };
       }));
 
       setData(resultData); // Atualizando o estado com os dados agrupados
@@ -90,7 +98,7 @@ const CostByProblemGroup = () => {
                 {item.nome.charAt(0).toUpperCase() + item.nome.slice(1)} ({item.quantidade})
               </span>
               <span className="font-bold text-red-500">
-                {formatCurrency(item.custo, item.moeda)} 
+                {formatCurrency(item.custo, 'BRL')} 
               </span>
             </li>
           ))}

@@ -50,7 +50,6 @@ const TotalCost = () => {
         for (const item of (data || []) as PaymentData[]) {
           const currency = item.cost_center?.moeda;
           const cost = parseFloat(item.custo || '0');
-          const paymentDate = item.data_vencimento; // Data de vencimento/pagamento
 
           if (currency === 'BRL') {
             totalBRL += cost; // Se já for BRL, apenas adiciona ao total
@@ -80,7 +79,7 @@ const TotalCost = () => {
     <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col justify-center items-center">
       <CardHeader>
         <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">
-          Custo Total em BRL
+          Custo Total
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -88,7 +87,7 @@ const TotalCost = () => {
           <p className="text-red-500">{error}</p> // Exibe mensagem de erro
         ) : (
           <p className="text-3xl font-bold text-red-500">
-            Total R$ {Number(totalInBRL).toFixed(2)} {/* Garante que é um número */}
+            R$ {totalInBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {/* Formata o total para BRL */}
           </p>
         )}
       </CardContent>

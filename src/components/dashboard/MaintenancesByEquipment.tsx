@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const MaintenancesAverageByEquipment = () => {
   const [average, setAverage] = useState<number | null>(null);
+  const [totalEquipments, setTotalEquipments] = useState<number | null>(null); // Adiciona estado para o total de equipamentos
 
   useEffect(() => {
     const fetchMaintenancesData = async () => {
@@ -37,16 +38,17 @@ const MaintenancesAverageByEquipment = () => {
       const totalMaintenances = maintenanceData?.length || 0;
 
       // Contar total de equipamentos
-      const { data: equipmentData, error: equipmentError } = await supabase
+      const { count: equipmentCount, error: equipmentError } = await supabase
         .from('equipment') // Altere para o nome da sua tabela de equipamentos
-        .select('*', { count: 'exact' });
+        .select('*', { count: 'exact' }); // Verifique se a contagem é feita corretamente
 
       if (equipmentError) {
         console.error('Erro ao buscar equipamentos:', equipmentError.message);
         return;
       }
 
-      const totalEquipments = equipmentData?.length || 0;
+      const totalEquipments = equipmentCount || 0; // Usa a contagem correta aqui
+      setTotalEquipments(totalEquipments); // Atualiza o estado com o total de equipamentos
 
       // Calcular a média
       const averageMaintenance = totalEquipments > 0 ? totalMaintenances / totalEquipments : 0;
@@ -59,7 +61,9 @@ const MaintenancesAverageByEquipment = () => {
   return (
     <Card className="bg-background shadow-md rounded-lg border border-border p-2 flex flex-col justify-center text-center">
       <CardHeader>
-        <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">Média de Manutenções por Equipamento</CardTitle>
+        <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">
+          Média de Manutenções por Equipamento
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="text-4xl font-bold text-red-500">

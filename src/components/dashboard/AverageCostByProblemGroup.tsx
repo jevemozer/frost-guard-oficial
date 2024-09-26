@@ -1,100 +1,105 @@
-"use client"; // Adicione esta linha
+"use client";
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
+import { convertToBRL } from '@/lib/currencyConversion'; // Importando a função de conversão
 
-interface Payment {
-  custo: number;
-  cost_center: {
-    moeda: string;
-  };
-  maintenance: {
-    problem_group_id: string;
-    problem_group: {
-      nome: string;
-    };
-  };
-}
-
-interface AverageCostData {
-  moeda: string;
-  grupoProblema: string;
-  custoMedio: number;
+interface ProblemGroupCost {
+  nome: string;
+  custo: number; // Custo em BRL
+  quantidade: number; // Adicionando o campo para quantidade
+  moeda: string; // Adicionando campo para moeda
 }
 
 const AverageCostByProblemGroup = () => {
-  const [data, setData] = useState<AverageCostData[]>([]);
+  const [data, setData] = useState<ProblemGroupCost[]>([]);
 
   useEffect(() => {
     const fetchAverageCostByProblemGroup = async () => {
-      const { data: result, error } = await supabase
-        .from<Payment>('payment')
-        .select(`custo, cost_center (moeda), maintenance (problem_group_id, problem_group (nome))`)
-        .eq('status', 'Pago'); // Filtrando apenas os pagamentos com status "pago"
+      const { data: payments, error: paymentError } = await supabase
+        .from('payment')
+        .select(`
+          custo,
+          cost_center (
+            moeda
+          ),
+          maintenance (
+            problem_group_id,
+            problem_group (nome),
+            status
+          )
+        `)
+        .eq('status', 'Pago');
 
-      if (error) {
-        console.error('Erro ao buscar custo médio por grupo de problema:', error.message);
+      if (paymentError) {
+        console.error('Erro ao buscar pagamentos:', paymentError.message);
         return;
       }
 
-      // Agrupando e somando os custos
-      const groupedData = result.reduce((acc: Record<string, { moeda: string; grupoProblema: string; custoTotal: number; count: number }>, item) => {
-        const groupName = item.maintenance?.problem_group?.nome; // Obter o nome do grupo
-        const currency = item.cost_center?.moeda; // Obter a moeda
+      const groupedData = payments.reduce((acc: Record<string, { nome: string; custo: number; quantidade: number; moeda: string }>, item: any) => {
+        const groupName = item.maintenance?.problem_group?.nome; // Obtendo o nome do grupo de problema
+        const status = item.maintenance?.status; // Obtendo o status da manutenção
+        const currency = item.cost_center?.moeda; // Obtendo a moeda
 
-        if (!groupName || !currency) return acc; // Se não tiver grupo ou moeda, ignorar
+        if (!groupName || status !== 'Finalizada' || !currency) return acc; // Ignorando se não tiver grupo ou não for finalizada
 
-        const key = `${currency}-${groupName}`; // Chave para identificação única
+        const key = `${groupName}-${currency}`; // Criando uma chave única por grupo de problema e moeda
 
         if (!acc[key]) {
-          acc[key] = { moeda: currency, grupoProblema: groupName, custoTotal: 0, count: 0 };
+          acc[key] = { nome: groupName, custo: 0, quantidade: 0, moeda: currency }; // Inicializando a quantidade e a moeda
         }
-        acc[key].custoTotal += item.custo; // Somar o custo
-        acc[key].count += 1; // Contar a manutenção
+        acc[key].custo += parseFloat(item.custo.toString()); // Somando o custo
+        acc[key].quantidade += 1; // Incrementando a quantidade
         return acc;
       }, {});
 
-      // Calculando a média para cada grupo por moeda
-      const averageData = Object.values(groupedData).map(item => ({
-        moeda: item.moeda,
-        grupoProblema: item.grupoProblema,
-        custoMedio: item.count > 0 ? item.custoTotal / item.count : 0, // Calcular a média
+      // Conversão dos custos para BRL
+      const resultData = await Promise.all(Object.values(groupedData).map(async (item) => {
+        const averageCost = item.custo / item.quantidade; // Calcula o custo médio
+        const conversionResult = await convertToBRL(averageCost, item.moeda); // Converte o custo médio
+        return {
+          ...item,
+          custo: conversionResult?.convertedAmount || 0, // Usando o valor convertido para BRL
+        };
       }));
 
-      setData(averageData);
+      setData(resultData); // Atualizando o estado com os dados agrupados
     };
 
     fetchAverageCostByProblemGroup();
   }, []);
 
-  // Função para formatar o valor em Reais
   const formatCurrency = (value: number, currency: string) => {
-    return new Intl.NumberFormat('pt-BR', {
+    const options: Intl.NumberFormatOptions = {
       style: 'currency',
       currency,
-    }).format(value);
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    };
+    
+    return value.toLocaleString('pt-BR', options);
   };
 
   return (
     <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col items-stretch justify-center">
       <CardHeader>
         <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">
-          Custo Médio por Grupo e Centro de Custo
+          Custo Médio por Grupo
         </CardTitle>
       </CardHeader>
       <CardContent>
         <ul className="space-y-2">
-          {data.length > 0 ? (
-            data.map((item) => (
-              <li key={`${item.moeda}-${item.grupoProblema}`} className="flex justify-between text-xl text-primary font-medium">
-                {item.grupoProblema.charAt(0).toUpperCase() + item.grupoProblema.slice(1)} ({item.moeda}):
-                <span className="font-bold text-red-500">{formatCurrency(item.custoMedio, item.moeda)}</span>
-              </li>
-            ))
-          ) : (
-            <li className="text-xs text-primary font-medium">Nenhum dado encontrado.</li>
-          )}
+          {data.map((item) => (
+            <li key={`${item.nome}-${item.moeda}`} className="flex justify-between text-xl text-primary font-medium">
+              <span className="text-xl text-primary font-medium">
+                {item.nome.charAt(0).toUpperCase() + item.nome.slice(1)} ({item.quantidade})
+              </span>
+              <span className="font-bold text-red-500">
+                {formatCurrency(item.custo, 'BRL')} 
+              </span>
+            </li>
+          ))}
         </ul>
       </CardContent>
     </Card>

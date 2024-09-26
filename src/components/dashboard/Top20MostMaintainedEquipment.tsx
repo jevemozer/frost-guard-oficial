@@ -129,7 +129,7 @@ const Top20MostMaintainedEquipment = () => {
               <li key={item.equipamento} className="flex justify-between text-xl text-primary font-medium">
                 Frota {item.equipamento}:
                 <span className="font-bold text-blue-500">
-                  {item.manutenções} manutenções - Custo Total: R${item.custoTotal.toFixed(2)}
+                  {item.manutenções} manutenções -: R${item.custoTotal.toFixed(2)}
                 </span>
               </li>
             ))}

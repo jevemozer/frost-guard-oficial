@@ -5,15 +5,14 @@ import { supabase } from '@/lib/supabase';
 import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
 import { convertToBRL } from '@/lib/currencyConversion'; // Importando a função de conversão
 
-interface ProblemGroupCost {
+interface ProblemGroupAverageCost {
   nome: string;
-  custo: number; // Custo em BRL
-  quantidade: number; // Adicionando o campo para quantidade
-  moeda: string; // Adicionando campo para moeda
+  mediaCusto: number; // Custo médio em BRL
+  quantidade: number; // Quantidade de manutenções
 }
 
 const AverageCostByProblemGroup = () => {
-  const [data, setData] = useState<ProblemGroupCost[]>([]);
+  const [data, setData] = useState<ProblemGroupAverageCost[]>([]);
 
   useEffect(() => {
     const fetchAverageCostByProblemGroup = async () => {
@@ -30,38 +29,42 @@ const AverageCostByProblemGroup = () => {
             status
           )
         `)
-        .eq('status', 'Pago');
+        .eq('status', 'Pago'); // Filtrando manutenções pagas
 
       if (paymentError) {
         console.error('Erro ao buscar pagamentos:', paymentError.message);
         return;
       }
 
-      const groupedData = payments.reduce((acc: Record<string, { nome: string; custo: number; quantidade: number; moeda: string }>, item: any) => {
-        const groupName = item.maintenance?.problem_group?.nome; // Obtendo o nome do grupo de problema
-        const status = item.maintenance?.status; // Obtendo o status da manutenção
-        const currency = item.cost_center?.moeda; // Obtendo a moeda
+      // Conversão e agrupamento
+      const groupedData: Record<string, { totalCusto: number; quantidade: number }> = {};
 
-        if (!groupName || status !== 'Finalizada' || !currency) return acc; // Ignorando se não tiver grupo ou não for finalizada
+      // Processando pagamentos
+      for (const item of payments) {
+        const groupName = item.maintenance?.problem_group?.nome; // Nome do grupo de problema
+        const currency = item.cost_center?.moeda; // Moeda
 
-        const key = `${groupName}-${currency}`; // Criando uma chave única por grupo de problema e moeda
+        if (!groupName || !currency) continue; // Ignorar se não houver nome do grupo ou moeda
 
-        if (!acc[key]) {
-          acc[key] = { nome: groupName, custo: 0, quantidade: 0, moeda: currency }; // Inicializando a quantidade e a moeda
+        // Converter custo para BRL
+        const convertedCost = await convertToBRL(parseFloat(item.custo.toString()), currency);
+        const costInBRL = convertedCost?.convertedAmount || 0;
+
+        // Inicializar dados do grupo se não existir
+        if (!groupedData[groupName]) {
+          groupedData[groupName] = { totalCusto: 0, quantidade: 0 }; // Inicializar valores do grupo
         }
-        acc[key].custo += parseFloat(item.custo.toString()); // Somando o custo
-        acc[key].quantidade += 1; // Incrementando a quantidade
-        return acc;
-      }, {});
 
-      // Conversão dos custos para BRL
-      const resultData = await Promise.all(Object.values(groupedData).map(async (item) => {
-        const averageCost = item.custo / item.quantidade; // Calcula o custo médio
-        const conversionResult = await convertToBRL(averageCost, item.moeda); // Converte o custo médio
-        return {
-          ...item,
-          custo: conversionResult?.convertedAmount || 0, // Usando o valor convertido para BRL
-        };
+        // Acumular valores
+        groupedData[groupName].totalCusto += costInBRL; // Acumular custo total em BRL
+        groupedData[groupName].quantidade += 1; // Contar o número de manutenções para o grupo
+      }
+
+      // Transformar dados agrupados em um array com média
+      const resultData = Object.entries(groupedData).map(([nome, { totalCusto, quantidade }]) => ({
+        nome,
+        mediaCusto: quantidade > 0 ? totalCusto / quantidade : 0, // Calcular média
+        quantidade,
       }));
 
       setData(resultData); // Atualizando o estado com os dados agrupados
@@ -77,7 +80,7 @@ const AverageCostByProblemGroup = () => {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     };
-    
+
     return value.toLocaleString('pt-BR', options);
   };
 
@@ -91,12 +94,12 @@ const AverageCostByProblemGroup = () => {
       <CardContent>
         <ul className="space-y-2">
           {data.map((item) => (
-            <li key={`${item.nome}-${item.moeda}`} className="flex justify-between text-xl text-primary font-medium">
+            <li key={item.nome} className="flex justify-between text-xl text-primary font-medium">
               <span className="text-xl text-primary font-medium">
                 {item.nome.charAt(0).toUpperCase() + item.nome.slice(1)} ({item.quantidade})
               </span>
               <span className="font-bold text-red-500">
-                {formatCurrency(item.custo, 'BRL')} 
+                {formatCurrency(item.mediaCusto, 'BRL')} 
               </span>
             </li>
           ))}

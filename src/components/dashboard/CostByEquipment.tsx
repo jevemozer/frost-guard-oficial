@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardTitle } from "@/components/ui/card";
 import { convertToBRL } from '@/lib/currencyConversion';
+import { Loader2 } from 'lucide-react'; // Importando o Loader2
 
 interface EquipmentCost {
   moeda: string;
@@ -24,7 +25,7 @@ interface PaymentResult {
 const CostByEquipment = () => {
   const [costsByCurrency, setCostsByCurrency] = useState<EquipmentCost[]>([]);
   const [equipmentCount, setEquipmentCount] = useState<number>(0);
-  const [totalCostInBRL, setTotalCostInBRL] = useState<number>(0); // Adicionei esta linha
+  const [totalCostInBRL, setTotalCostInBRL] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -66,9 +67,8 @@ const CostByEquipment = () => {
 
       setEquipmentCount(equipmentCount || 0);
 
-      // Conversão dos custos para BRL
       const formattedData: EquipmentCost[] = [];
-      let totalConvertedAmount = 0; // Adicionei esta variável
+      let totalConvertedAmount = 0;
 
       for (const [moeda, total_cost] of Object.entries(currencyCostsMap)) {
         const { convertedAmount } = await convertToBRL(total_cost, moeda);
@@ -76,11 +76,11 @@ const CostByEquipment = () => {
           moeda: "BRL",
           total_cost: convertedAmount / (equipmentCount || 1),
         });
-        totalConvertedAmount += convertedAmount; // Acumula o total convertido
+        totalConvertedAmount += convertedAmount;
       }
 
       setCostsByCurrency(formattedData);
-      setTotalCostInBRL(totalConvertedAmount / (equipmentCount || 1)); // Custo médio total em BRL
+      setTotalCostInBRL(totalConvertedAmount / (equipmentCount || 1));
       setLoading(false);
     };
 
@@ -105,7 +105,11 @@ const CostByEquipment = () => {
       </CardTitle>
       <ul className="space-y-2">
         {loading ? (
-          <li className="text-xl text-red-500 font-medium">Carregando dados...</li>
+          <li className="flex justify-center items-center text-xl text-red-500">
+            <div className="flex justify-center items-center text-xl font-normal">
+            <Loader2 className="animate-spin h-5 w-5 mr-2 text-primary" /> Carregando dados...
+            </div>
+          </li>
         ) : costsByCurrency.length > 0 ? (
           <>
             <li className="flex justify-between text-xl text-primary font-medium">
@@ -122,8 +126,8 @@ const CostByEquipment = () => {
         )}
       </ul>
       <p className="text-center text-lg mt-4 text-foreground">
-          Total de Equipamentos: {equipmentCount}
-        </p>
+        Total de Equipamentos: {equipmentCount}
+      </p>
     </Card>
   );
 };

@@ -3,13 +3,18 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react'; // Importando o loader do Lucide
 
 const MaintenancesAverageByEquipment = () => {
   const [average, setAverage] = useState<number | null>(null);
   const [totalEquipments, setTotalEquipments] = useState<number | null>(null); // Adiciona estado para o total de equipamentos
+  const [loading, setLoading] = useState<boolean>(true); // Estado para controlar o loading
 
   useEffect(() => {
     const fetchMaintenancesData = async () => {
+      // Inicia o loading
+      setLoading(true);
+
       // Buscar os maintenance_id onde o status é "Pago"
       const { data: paymentData, error: paymentError } = await supabase
         .from('payment')
@@ -18,6 +23,7 @@ const MaintenancesAverageByEquipment = () => {
 
       if (paymentError) {
         console.error('Erro ao buscar pagamentos:', paymentError.message);
+        setLoading(false); // Para o loading em caso de erro
         return;
       }
 
@@ -32,6 +38,7 @@ const MaintenancesAverageByEquipment = () => {
 
       if (maintenanceError) {
         console.error('Erro ao buscar manutenções:', maintenanceError.message);
+        setLoading(false); // Para o loading em caso de erro
         return;
       }
 
@@ -44,6 +51,7 @@ const MaintenancesAverageByEquipment = () => {
 
       if (equipmentError) {
         console.error('Erro ao buscar equipamentos:', equipmentError.message);
+        setLoading(false); // Para o loading em caso de erro
         return;
       }
 
@@ -53,6 +61,9 @@ const MaintenancesAverageByEquipment = () => {
       // Calcular a média
       const averageMaintenance = totalEquipments > 0 ? totalMaintenances / totalEquipments : 0;
       setAverage(averageMaintenance);
+
+      // Para o loading após a busca de dados
+      setLoading(false);
     };
 
     fetchMaintenancesData();
@@ -66,8 +77,14 @@ const MaintenancesAverageByEquipment = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-4xl font-bold text-red-500">
-          {average !== null ? average.toFixed(2) : 'Carregando...'}
+        <div className="text-4xl flex justify-center items-center font-bold text-red-500">
+          {loading ? ( // Verifica se está carregando
+          <div className="flex justify-center items-center text-xl font-normal">
+            <Loader2 className="animate-spin h-5 w-5 mr-2 text-primary" size={24} /> Carregando dados...
+          </div>
+           ) : (
+            average !== null ? average.toFixed(2) : 'Nenhuma manutenção encontrada'
+          )}
         </div>
       </CardContent>
     </Card>

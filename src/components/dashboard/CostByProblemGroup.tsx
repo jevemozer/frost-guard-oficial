@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
 import { convertToBRL } from '@/lib/currencyConversion'; // Importando a função de conversão
+import { Loader2 } from 'lucide-react'; // Importando o ícone de loader
 
 interface ProblemGroupCost {
   nome: string;
@@ -13,6 +14,7 @@ interface ProblemGroupCost {
 
 const CostByProblemGroup = () => {
   const [data, setData] = useState<ProblemGroupCost[]>([]);
+  const [loading, setLoading] = useState<boolean>(true); // Estado de carregamento
 
   useEffect(() => {
     const fetchCostByProblemGroup = async () => {
@@ -33,6 +35,7 @@ const CostByProblemGroup = () => {
 
       if (paymentError) {
         console.error('Erro ao buscar pagamentos:', paymentError.message);
+        setLoading(false); // Parar o carregamento em caso de erro
         return;
       }
 
@@ -68,6 +71,7 @@ const CostByProblemGroup = () => {
       }));
 
       setData(resultData); // Atualizando o estado com os dados agrupados
+      setLoading(false); // Parar o carregamento após os dados serem buscados
     };
 
     fetchCostByProblemGroup();
@@ -92,18 +96,24 @@ const CostByProblemGroup = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ul className="space-y-2">
-          {data.map((item) => (
-            <li key={item.nome} className="flex justify-between text-xl text-primary font-medium">
-              <span className="text-xl text-primary font-medium">
-                {item.nome.charAt(0).toUpperCase() + item.nome.slice(1)} ({item.quantidade})
-              </span>
-              <span className="font-bold text-red-500">
-                {formatCurrency(item.custo, 'BRL')} 
-              </span>
-            </li>
-          ))}
-        </ul>
+        {loading ? ( // Exibir loader enquanto os dados estão sendo carregados
+            <div className="flex justify-center items-center text-xl font-normal">
+            <Loader2 className="animate-spin h-5 w-5 mr-2 text-primary" /> Carregando dados...
+            </div>
+        ) : (
+          <ul className="space-y-2">
+            {data.map((item) => (
+              <li key={item.nome} className="flex justify-between text-xl text-primary font-medium">
+                <span className="text-xl text-primary font-medium">
+                  {item.nome.charAt(0).toUpperCase() + item.nome.slice(1)} ({item.quantidade})
+                </span>
+                <span className="font-bold text-red-500">
+                  {formatCurrency(item.custo, 'BRL')}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );

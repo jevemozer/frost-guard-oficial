@@ -86,8 +86,8 @@ export default function TotalMaintenances() {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="flex justify-center">
-            <Loader2 className="animate-spin" />
+          <div className="flex justify-center items-center">
+            <Loader2 className="animate-spin h-5 w-5 mr-2 text-primary" /> Carregando dados...
           </div>
         ) : (
           <div>

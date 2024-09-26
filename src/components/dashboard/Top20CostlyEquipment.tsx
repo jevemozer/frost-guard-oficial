@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react'; // Importando o ícone de Loader2
 import { convertToBRL } from '@/lib/currencyConversion'; // Importando sua função de conversão de moeda
 
 const Top20CostlyEquipment = () => {
@@ -104,7 +105,18 @@ const Top20CostlyEquipment = () => {
     fetchTop20CostlyEquipment();
   }, []);
 
-  if (loading) return <Card>Carregando...</Card>;
+  if (loading) return (
+    <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col items-center justify-center">
+      <CardHeader>
+        <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">
+          Top 20 Equipamentos Mais Caros
+        </CardTitle>
+      </CardHeader>
+      <Loader2 className="animate-spin h-6 w-6 text-primary" />
+      <span className="mt-2 text-primary">Carregando dados...
+      </span>
+    </Card>
+  );
 
   return (
     <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col items-stretch justify-center">

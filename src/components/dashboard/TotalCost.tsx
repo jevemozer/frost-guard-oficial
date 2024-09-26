@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
 import { convertToBRL } from '@/lib/currencyConversion'; // Importa a função de conversão
+import { Loader2 } from 'lucide-react'; // Importa o Loader2 do Lucide
 
 interface PaymentData {
   custo: string;
@@ -19,6 +20,7 @@ interface PaymentData {
 const TotalCost = () => {
   const [totalInBRL, setTotalInBRL] = useState<number>(0); // Total em BRL
   const [error, setError] = useState<string | null>(null); // Estado para armazenar erros
+  const [loading, setLoading] = useState<boolean>(true); // Estado de loading
 
   useEffect(() => {
     // Função assíncrona para buscar e calcular o total
@@ -69,6 +71,8 @@ const TotalCost = () => {
       } catch (error) {
         console.error('Erro geral ao calcular o custo total:', error);
         setError('Erro geral ao calcular o custo total.');
+      } finally {
+        setLoading(false); // Define loading como false após a tentativa de fetch
       }
     };
 
@@ -83,7 +87,11 @@ const TotalCost = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {error ? (
+        {loading ? ( // Verifica se está carregando
+          <div className="flex justify-center items-center">
+            <Loader2 className="animate-spin h-5 w-5 mr-2 text-primary" /> Carregando dados...
+          </div>
+        ) : error ? (
           <p className="text-red-500">{error}</p> // Exibe mensagem de erro
         ) : (
           <p className="text-3xl font-bold text-red-500">

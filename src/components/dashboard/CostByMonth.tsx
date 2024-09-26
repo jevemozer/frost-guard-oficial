@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
 import { convertToBRL } from '@/lib/currencyConversion';
+import { Loader2 } from 'lucide-react'; 
 
 interface CostData {
   mes: string;
@@ -13,9 +14,11 @@ interface CostData {
 
 const CostByMonth = () => {
   const [data, setData] = useState<CostData[]>([]);
+  const [loading, setLoading] = useState<boolean>(true); // Estado de carregamento
 
   useEffect(() => {
     const fetchCostByMonth = async () => {
+      setLoading(true); // Começa o carregamento
       const { data: result, error } = await supabase
         .from('payment')
         .select('payment_date, custo, cost_center(moeda), maintenance(status)')
@@ -24,11 +27,13 @@ const CostByMonth = () => {
 
       if (error) {
         console.error('Erro ao buscar custo por mês:', error.message);
+        setLoading(false); // Para o carregamento em caso de erro
         return;
       }
 
       if (!result) {
         console.warn('Nenhum dado encontrado.');
+        setLoading(false); // Para o carregamento se não houver dados
         return;
       }
 
@@ -69,6 +74,7 @@ const CostByMonth = () => {
       const sortedData = formattedData.sort((a, b) => a.mes.localeCompare(b.mes));
 
       setData(sortedData);
+      setLoading(false); // Para o carregamento após os dados serem buscados
     };
 
     fetchCostByMonth();
@@ -98,14 +104,20 @@ const CostByMonth = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ul className="space-y-2">
-          {data.map((item) => (
-            <li key={item.mes} className="flex justify-between text-xl text-primary font-medium">
-              <span className="mr-4">{formatMonth(item.mes)}</span>
-              <span className="font-bold text-red-500">{formatCurrency(item.custo)}</span>
-            </li>
-          ))}
-        </ul>
+        {loading ? ( // Exibe o Loader2 enquanto os dados estão carregando
+          <div className="flex justify-center items-center">
+            <Loader2 className="animate-spin h-5 w-5 mr-2 text-primary" /> Carregando dados...
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {data.map((item) => (
+              <li key={item.mes} className="flex justify-between text-xl text-primary font-medium">
+                <span className="mr-4">{formatMonth(item.mes)}</span>
+                <span className="font-bold text-red-500">{formatCurrency(item.custo)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );

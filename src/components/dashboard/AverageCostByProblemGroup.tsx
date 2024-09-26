@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
 import { convertToBRL } from '@/lib/currencyConversion'; // Importando a função de conversão
+import { Loader2 } from 'lucide-react'; // Importando o Loader2 do Lucide
 
 interface ProblemGroupAverageCost {
   nome: string;
@@ -13,9 +14,12 @@ interface ProblemGroupAverageCost {
 
 const AverageCostByProblemGroup = () => {
   const [data, setData] = useState<ProblemGroupAverageCost[]>([]);
+  const [loading, setLoading] = useState<boolean>(true); // Estado para controle de carregamento
 
   useEffect(() => {
     const fetchAverageCostByProblemGroup = async () => {
+      setLoading(true); // Inicia o loading
+
       const { data: payments, error: paymentError } = await supabase
         .from('payment')
         .select(`
@@ -33,6 +37,7 @@ const AverageCostByProblemGroup = () => {
 
       if (paymentError) {
         console.error('Erro ao buscar pagamentos:', paymentError.message);
+        setLoading(false); // Finaliza o loading em caso de erro
         return;
       }
 
@@ -68,6 +73,7 @@ const AverageCostByProblemGroup = () => {
       }));
 
       setData(resultData); // Atualizando o estado com os dados agrupados
+      setLoading(false); // Finaliza o loading
     };
 
     fetchAverageCostByProblemGroup();
@@ -92,18 +98,24 @@ const AverageCostByProblemGroup = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ul className="space-y-2">
-          {data.map((item) => (
-            <li key={item.nome} className="flex justify-between text-xl text-primary font-medium">
-              <span className="text-xl text-primary font-medium">
-                {item.nome.charAt(0).toUpperCase() + item.nome.slice(1)} ({item.quantidade})
-              </span>
-              <span className="font-bold text-red-500">
-                {formatCurrency(item.mediaCusto, 'BRL')} 
-              </span>
-            </li>
-          ))}
-        </ul>
+        {loading ? (
+            <div className="flex justify-center items-center text-xl font-normal">
+            <Loader2 className="animate-spin h-5 w-5 mr-2 text-primary" /> Carregando dados...
+            </div>
+        ) : (
+          <ul className="space-y-2">
+            {data.map((item) => (
+              <li key={item.nome} className="flex justify-between text-xl text-primary font-medium">
+                <span className="text-xl text-primary font-medium">
+                  {item.nome.charAt(0).toUpperCase() + item.nome.slice(1)} ({item.quantidade})
+                </span>
+                <span className="font-bold text-red-500">
+                  {formatCurrency(item.mediaCusto, 'BRL')}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );

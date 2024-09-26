@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
 import { convertToBRL } from '@/lib/currencyConversion'; // Importar a função de conversão
+import { Loader2 } from 'lucide-react'; // Importar o Loader2 do Lucide
 
 const Top20MostMaintainedEquipment = () => {
   const [data, setData] = useState<{ equipamento: string; manutenções: number; custoTotal: number }[]>([]);
@@ -111,7 +112,18 @@ const Top20MostMaintainedEquipment = () => {
     fetchTop20MostMaintainedEquipment();
   }, []);
 
-  if (loading) return <Card>Carregando...</Card>;
+  if (loading) {
+    return (
+      <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col items-center justify-center">
+      <CardHeader>
+        <CardTitle className="text-2xl font-semibold text-primary text-center mb-4">
+          Top 20 Equipamentos Mais Mantidos
+        </CardTitle>
+      </CardHeader>
+        <Loader2 className="animate-spin text-primary" /> Carregando dados...
+      </Card>
+    );
+  }
 
   return (
     <Card className="bg-background shadow-md rounded-lg border border-border p-6 flex flex-col items-stretch justify-center">
@@ -128,8 +140,9 @@ const Top20MostMaintainedEquipment = () => {
             {data.map((item) => (
               <li key={item.equipamento} className="flex justify-between text-xl text-primary font-medium">
                 Frota {item.equipamento}:
-                <span className="font-bold text-blue-500">
-                  {item.manutenções} manutenções -: R${item.custoTotal.toFixed(2)}
+                <span>({item.manutenções})</span>
+                <span className="font-bold text-red-500">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.custoTotal)}
                 </span>
               </li>
             ))}

@@ -8,8 +8,7 @@ import { convertToBRL } from '@/lib/currencyConversion'; // Importando a funçã
 interface ProblemGroupCost {
   nome: string;
   custo: number; // Custo em BRL
-  quantidade: number; // Adicionando o campo para quantidade
-  moeda: string; // Adicionando campo para moeda
+  quantidade: number; // Quantidade de manutenções
 }
 
 const CostByProblemGroup = () => {
@@ -18,7 +17,7 @@ const CostByProblemGroup = () => {
   useEffect(() => {
     const fetchCostByProblemGroup = async () => {
       const { data: payments, error: paymentError } = await supabase
-        .from('payment') // Definindo o tipo para 'payment'
+        .from('payment')
         .select(`
           custo,
           cost_center (
@@ -30,40 +29,42 @@ const CostByProblemGroup = () => {
             status
           )
         `)
-        .eq('status', 'Pago'); // Usando "Pago" com letra maiúscula
+        .eq('status', 'Pago'); // Filtrando manutenções pagas
 
       if (paymentError) {
         console.error('Erro ao buscar pagamentos:', paymentError.message);
         return;
       }
 
-      const groupedData = payments.reduce((acc: Record<string, { nome: string; custo: number; quantidade: number; moeda: string }>, item: any) => {
-        const groupName = item.maintenance?.problem_group?.nome; // Obtendo o nome do grupo de problema
-        const status = item.maintenance?.status; // Obtendo o status da manutenção
-        const currency = item.cost_center?.moeda; // Obtendo a moeda
+      // Conversão e agrupamento
+      const groupedData: Record<string, { custo: number; quantidade: number }> = {};
 
-        // Ignorando se não tiver grupo, se não for 'Pago', ou se não tiver moeda
-        if (!groupName || status !== 'Finalizada' || !currency) return acc; 
+      // Processando pagamentos
+      for (const item of payments) {
+        const groupName = item.maintenance?.problem_group?.nome; // Nome do grupo de problema
+        const currency = item.cost_center?.moeda; // Moeda
 
-        const key = `${groupName}-${currency}`; // Criando uma chave única por grupo de problema e moeda
+        if (!groupName || !currency) continue; // Ignorar se não houver nome do grupo ou moeda
 
-        if (!acc[key]) {
-          acc[key] = { nome: groupName, custo: 0, quantidade: 0, moeda: currency }; // Inicializando a quantidade e a moeda
+        // Converter custo para BRL
+        const convertedCost = await convertToBRL(parseFloat(item.custo.toString()), currency);
+        const costInBRL = convertedCost?.convertedAmount || 0;
+
+        // Inicializar dados do grupo se não existir
+        if (!groupedData[groupName]) {
+          groupedData[groupName] = { custo: 0, quantidade: 0 }; // Inicializar valores do grupo
         }
-        
-        // Somando o custo
-        acc[key].custo += parseFloat(item.custo.toString()); 
-        acc[key].quantidade += 1; // Incrementando a quantidade
-        return acc;
-      }, {});
 
-      // Conversão dos custos para BRL
-      const resultData = await Promise.all(Object.values(groupedData).map(async (item) => {
-        const conversionResult = await convertToBRL(item.custo, item.moeda); // Converte o custo total
-        return {
-          ...item,
-          custo: conversionResult?.convertedAmount || 0, // Usando o valor convertido para BRL
-        };
+        // Acumular valores
+        groupedData[groupName].custo += costInBRL; // Acumular custo total em BRL
+        groupedData[groupName].quantidade += 1; // Contar o número de manutenções para o grupo
+      }
+
+      // Transformar dados agrupados em um array
+      const resultData = Object.entries(groupedData).map(([nome, { custo, quantidade }]) => ({
+        nome,
+        custo,
+        quantidade,
       }));
 
       setData(resultData); // Atualizando o estado com os dados agrupados
@@ -79,7 +80,7 @@ const CostByProblemGroup = () => {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     };
-    
+
     return value.toLocaleString('pt-BR', options);
   };
 
@@ -93,7 +94,7 @@ const CostByProblemGroup = () => {
       <CardContent>
         <ul className="space-y-2">
           {data.map((item) => (
-            <li key={`${item.nome}-${item.moeda}`} className="flex justify-between text-xl text-primary font-medium">
+            <li key={item.nome} className="flex justify-between text-xl text-primary font-medium">
               <span className="text-xl text-primary font-medium">
                 {item.nome.charAt(0).toUpperCase() + item.nome.slice(1)} ({item.quantidade})
               </span>

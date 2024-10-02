@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR"; // Para formatar a data em português
 import { toast } from "react-toastify"; // Opcional: para exibir notificações
+import { CheckCircle, Trash } from "lucide-react"; // Importando ícones
 
 interface Manutencao {
   id: string;
@@ -25,41 +26,104 @@ const AcompanhamentoManutencao: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState<string | null>(null); // Para indicar se uma ação está em andamento
 
+  // Função para buscar as manutenções inicialmente
+  const fetchManutencoes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("maintenance")
+        .select(` 
+          id, 
+          data_problema, 
+          carreta, 
+          status, 
+          observation, 
+          city_id (name), 
+          equipment_id (frota), 
+          driver_id (nome), 
+          diagnostic_id (descricao), 
+          problem_group_id (nome), 
+          workshop_id (razao_social), 
+          maintenance_type_id (nome)
+        `)
+        .neq("status", "Finalizada");
+
+      if (error) throw error;
+      setManutencoes(data as Manutencao[]);
+    } catch (error) {
+      setError("Erro ao buscar manutenções.");
+      console.error("Erro ao buscar manutenções:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Efeito para buscar as manutenções inicialmente
   useEffect(() => {
-    const fetchManutencoes = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("maintenance")
-          .select(`
-            id, 
-            data_problema, 
-            carreta, 
-            status, 
-            observation, 
-            city_id (name),
-            equipment_id (frota), 
-            driver_id (nome), 
-            diagnostic_id (descricao), 
-            problem_group_id (nome), 
-            workshop_id (razao_social), 
-            maintenance_type_id (nome)
-          `);
-
-        if (error) throw error;
-        setManutencoes(data as Manutencao[]);
-      } catch (error) {
-        setError("Erro ao buscar manutenções.");
-        console.error("Erro ao buscar manutenções:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchManutencoes();
-  }, []);
+
+    // Inscrição para escutar mudanças em tempo real
+    const channel = supabase
+      .channel('table-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'maintenance' }, 
+        (payload) => {
+          // Lógica para buscar apenas as manutenções alteradas
+          if (payload.eventType === "UPDATE" || payload.eventType === "DELETE") {
+            // Verifica se a manutenção existe no estado atual
+            const exists = manutencoes.some((m) => m.id === payload.new?.id || m.id === payload.old?.id);
+            if (!exists) return; // Se não existe, não faz nada
+
+            // Atualiza a lista de manutenções
+            if (payload.eventType === "UPDATE") {
+              // Se o status foi alterado para "Finalizada"
+              if (payload.new.status === "Finalizada") {
+                setManutencoes((prev) => prev.filter((manutencao) => manutencao.id !== payload.new.id));
+              } else {
+                setManutencoes((prev) =>
+                  prev.map((manutencao) =>
+                    manutencao.id === payload.new.id ? payload.new : manutencao
+                  )
+                );
+              }
+            } else if (payload.eventType === "DELETE") {
+              setManutencoes((prev) =>
+                prev.filter((manutencao) => manutencao.id !== payload.old.id)
+              );
+            }
+          } else if (payload.eventType === "INSERT") {
+            // Para novos registros, adiciona diretamente
+            setManutencoes((prev) => [...prev, payload.new]);
+          }
+        }
+      )
+      .subscribe();
+
+    // Cleanup: desconecta o canal quando o componente é desmontado
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [manutencoes]);
 
   const handleFinalizarManutencao = useCallback(
-    async (id: string) => {
+    async (manutencao: Manutencao) => {
+      const { id, data_problema, carreta, city_id, equipment_id, driver_id, diagnostic_id, problem_group_id, workshop_id, maintenance_type_id } = manutencao;
+
+      if (
+        !data_problema ||
+        !carreta ||
+        !city_id?.name ||
+        !equipment_id?.frota ||
+        !driver_id?.nome ||
+        !diagnostic_id?.descricao ||
+        !problem_group_id?.nome ||
+        !workshop_id?.razao_social ||
+        !maintenance_type_id?.nome
+      ) {
+        toast.error("Preencha todos os campos obrigatórios antes de finalizar.");
+        return;
+      }
+
       setProcessing(id); // Define o ID como o que está sendo processado
       try {
         const { error: updateError } = await supabase
@@ -71,16 +135,16 @@ const AcompanhamentoManutencao: React.FC = () => {
 
         const { error: paymentError } = await supabase.from("payment").insert({
           maintenance_id: id,
-          status: "Aguardando Informações",
+          status: "Pendente",
+          custo: 0,
           created_at: new Date().toISOString(),
         });
 
         if (paymentError) throw paymentError;
 
-        // Atualiza a lista local de manutenções
         setManutencoes((prev) =>
-          prev.map((manutencao) =>
-            manutencao.id === id ? { ...manutencao, status: "Finalizada" } : manutencao
+          prev.map((m) =>
+            m.id === id ? { ...m, status: "Finalizada" } : m
           )
         );
 
@@ -89,17 +153,17 @@ const AcompanhamentoManutencao: React.FC = () => {
         console.error("Erro ao finalizar manutenção:", error);
         toast.error("Erro ao finalizar manutenção.");
       } finally {
-        setProcessing(null); // Reseta o estado de processamento
+        setProcessing(null);
       }
     },
-    [setManutencoes] // Garantir que as dependências estejam corretas
+    [setManutencoes]
   );
 
   const handleExcluirManutencao = useCallback(
     async (id: string) => {
       const confirm = window.confirm("Tem certeza que deseja excluir esta manutenção?");
       if (confirm) {
-        setProcessing(id); // Marca o ID como o que está sendo processado
+        setProcessing(id); 
         try {
           const { error } = await supabase.from("maintenance").delete().eq("id", id);
 
@@ -111,7 +175,7 @@ const AcompanhamentoManutencao: React.FC = () => {
           console.error("Erro ao excluir a manutenção:", error);
           toast.error("Erro ao excluir a manutenção.");
         } finally {
-          setProcessing(null); // Reseta o estado de processamento
+          setProcessing(null);
         }
       }
     },
@@ -122,53 +186,55 @@ const AcompanhamentoManutencao: React.FC = () => {
   if (error) return <p>{error}</p>;
 
   return (
-    <table className="min-w-full border">
+    <table className="min-w-full border border-border text-primary text-center">
       <thead>
-        <tr>
-          <th>Data do Problema</th>
-          <th>Equipamento</th>
-          <th>Motorista</th>
-          <th>Carreta</th>
-          <th>Cidade</th>
-          <th>Diagnóstico</th>
-          <th>Grupo de Problema</th>
-          <th>Oficina</th>
-          <th>Tipo de Manutenção</th>
-          <th>Status</th>
-          <th>Ações</th>
+        <tr className="bg-emerald-100 dark:bg-emerald-600">
+          <th className="p-2">Data do Problema</th>
+          <th className="p-2">Equipamento</th>
+          <th className="p-2">Motorista</th>
+          <th className="p-2">Carreta</th>
+          <th className="p-2">Cidade</th>
+          <th className="p-2">Diagnóstico</th>
+          <th className="p-2">Grupo de Problema</th>
+          <th className="p-2">Oficina</th>
+          <th className="p-2">Tipo de Manutenção</th>
+          <th className="p-2">Status</th>
+          <th className="p-2">Ações</th>
         </tr>
       </thead>
       <tbody>
         {manutencoes.map((manutencao) => (
-          <tr key={manutencao.id} className="border-t">
-            <td>
-              {format(new Date(manutencao.data_problema), "dd/MM/yyyy", {
-                locale: ptBR,
-              })}
+          <tr key={manutencao.id} className="border-t border-border">
+            <td className="p-2">
+              {format(new Date(manutencao.data_problema), "dd/MM/yyyy", { locale: ptBR })}
             </td>
-            <td>{manutencao.equipment_id.frota}</td>
-            <td>{manutencao.driver_id.nome}</td>
-            <td>{manutencao.carreta}</td>
-            <td>{manutencao.city_id.name}</td>
-            <td>{manutencao.diagnostic_id?.descricao || "Sem diagnóstico"}</td>
-            <td>{manutencao.problem_group_id?.nome || "Sem grupo"}</td>
-            <td>{manutencao.workshop_id?.razao_social || "Sem oficina"}</td>
-            <td>{manutencao.maintenance_type_id?.nome || "Sem tipo"}</td>
-            <td>{manutencao.status || "Pendente"}</td>
-            <td>
+            <td className="p-2">{manutencao.equipment_id.frota}</td>
+            <td className="p-2">{manutencao.driver_id.nome}</td>
+            <td className="p-2">{manutencao.carreta}</td>
+            <td className="p-2">{manutencao.city_id.name}</td>
+            <td className="p-2">{manutencao.diagnostic_id?.descricao || "Sem diagnóstico"}</td>
+            <td className="p-2">{manutencao.problem_group_id?.nome || "Sem grupo"}</td>
+            <td className="p-2">{manutencao.workshop_id?.razao_social || "Sem oficina"}</td>
+            <td className="p-2">{manutencao.maintenance_type_id?.nome || "Sem tipo"}</td>
+            <td className="p-2">{manutencao.status || "Pendente"}</td>
+            <td className="p-2 flex space-x-2 justify-center">
               <button
-                className="text-green-500"
-                onClick={() => handleFinalizarManutencao(manutencao.id)}
-                disabled={processing === manutencao.id} // Desabilita o botão durante o processamento
+                className="text-green-500 hover:text-green-700"
+                onClick={() => handleFinalizarManutencao(manutencao)}
+                disabled={processing === manutencao.id}
               >
-                {processing === manutencao.id ? "Processando..." : "Finalizar"}
+                {processing === manutencao.id ? (
+                  "Processando..."
+                ) : (
+                  <CheckCircle className="w-5 h-5" /> // Ícone de finalizar
+                )}
               </button>
               <button
-                className="text-red-500 ml-2"
+                className="text-red-500 hover:text-red-700"
                 onClick={() => handleExcluirManutencao(manutencao.id)}
-                disabled={processing === manutencao.id} // Desabilita o botão durante o processamento
+                disabled={processing === manutencao.id}
               >
-                {processing === manutencao.id ? "Processando..." : "Excluir"}
+                <Trash className="w-5 h-5" />
               </button>
             </td>
           </tr>

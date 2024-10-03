@@ -243,7 +243,7 @@ const AcompanhamentoManutencao: React.FC = () => {
           </select>
 
             </td>
-            <td className="p-2 flex justify-center space-x-2">
+            <td className="p-2 flex justify-items-center space-x-2">
               <button
                 onClick={() => handleExcluirManutencao(manutencao.id)}
                 disabled={processing === manutencao.id}

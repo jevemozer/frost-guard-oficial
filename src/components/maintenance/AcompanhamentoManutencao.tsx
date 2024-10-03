@@ -5,6 +5,14 @@ import ptBR from "date-fns/locale/pt-BR"; // Para formatar a data em português
 import { toast } from "react-toastify"; // Opcional: para exibir notificações
 import { CheckCircle, Trash } from "lucide-react"; // Importando ícones
 
+const statusList = [
+  "Em tratativa",
+  "Enviado para manutenção",
+  "Em manutenção",
+  "Finalizada",
+];
+
+
 interface Manutencao {
   id: string;
   data_problema: string;
@@ -105,59 +113,69 @@ const AcompanhamentoManutencao: React.FC = () => {
     };
   }, [manutencoes]);
 
-  const handleFinalizarManutencao = useCallback(
-    async (manutencao: Manutencao) => {
-      const { id, data_problema, carreta, city_id, equipment_id, driver_id, diagnostic_id, problem_group_id, workshop_id, maintenance_type_id } = manutencao;
-
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    setProcessing(id);
+  
+    // Encontra a manutenção atual pelo ID
+    const manutencao = manutencoes.find((m) => m.id === id);
+  
+    // Verifica se o novo status é 'Finalizada' e se todos os campos obrigatórios estão preenchidos
+    if (newStatus === "Finalizada") {
       if (
-        !data_problema ||
-        !carreta ||
-        !city_id?.name ||
-        !equipment_id?.frota ||
-        !driver_id?.nome ||
-        !diagnostic_id?.descricao ||
-        !problem_group_id?.nome ||
-        !workshop_id?.razao_social ||
-        !maintenance_type_id?.nome
+        !manutencao?.data_problema ||
+        !manutencao?.carreta ||
+        !manutencao?.city_id?.name ||
+        !manutencao?.equipment_id?.frota ||
+        !manutencao?.driver_id?.nome ||
+        !manutencao?.diagnostic_id?.descricao ||
+        !manutencao?.problem_group_id?.nome ||
+        !manutencao?.workshop_id?.razao_social
       ) {
-        toast.error("Preencha todos os campos obrigatórios antes de finalizar.");
+        toast.error("Preencha todos os campos obrigatórios antes de finalizar a manutenção.");
+        setProcessing(null);
         return;
       }
-
-      setProcessing(id); // Define o ID como o que está sendo processado
-      try {
-        const { error: updateError } = await supabase
-          .from("maintenance")
-          .update({ status: "Finalizada" })
-          .eq("id", id);
-
-        if (updateError) throw updateError;
-
-        const { error: paymentError } = await supabase.from("payment").insert({
+    }
+  
+    try {
+      const { error } = await supabase
+        .from("maintenance")
+        .update({ status: newStatus })
+        .eq("id", id);
+  
+      if (error) throw error;
+  
+      if (newStatus === "Finalizada") {
+        // Se o status for 'Finalizada', registra no sistema de pagamento
+        await supabase.from("payment").insert({
           maintenance_id: id,
           status: "Pendente",
           custo: 0,
           created_at: new Date().toISOString(),
         });
-
-        if (paymentError) throw paymentError;
-
+  
+        toast.success("Manutenção finalizada e registrada no financeiro.");
+        // Remove a manutenção finalizada do estado
+        setManutencoes((prev) => prev.filter((m) => m.id !== id));
+      } else {
+        // Atualiza o status da manutenção no estado
         setManutencoes((prev) =>
-          prev.map((m) =>
-            m.id === id ? { ...m, status: "Finalizada" } : m
+          prev.map((manutencao) =>
+            manutencao.id === id ? { ...manutencao, status: newStatus } : manutencao
           )
         );
-
-        toast.success("Manutenção finalizada e registrada no controle financeiro.");
-      } catch (error) {
-        console.error("Erro ao finalizar manutenção:", error);
-        toast.error("Erro ao finalizar manutenção.");
-      } finally {
-        setProcessing(null);
+        toast.success("Status da manutenção atualizado com sucesso.");
       }
-    },
-    [setManutencoes]
-  );
+    } catch (error) {
+      console.error("Erro ao atualizar o status:", error);
+      toast.error("Erro ao atualizar o status.");
+    } finally {
+      setProcessing(null);
+    }
+  };
+  
+  
+  
 
   const handleExcluirManutencao = useCallback(
     async (id: string) => {
@@ -216,19 +234,27 @@ const AcompanhamentoManutencao: React.FC = () => {
             <td className="p-2">{manutencao.problem_group_id?.nome || "Sem grupo"}</td>
             <td className="p-2">{manutencao.workshop_id?.razao_social || "Sem oficina"}</td>
             <td className="p-2">{manutencao.maintenance_type_id?.nome || "Sem tipo"}</td>
-            <td className="p-2">{manutencao.status || "Pendente"}</td>
-            <td className="p-2 flex space-x-2 justify-center">
-              <button
-                className="text-green-500 hover:text-green-700"
-                onClick={() => handleFinalizarManutencao(manutencao)}
-                disabled={processing === manutencao.id}
+            <td className="p-2">
+            <select
+                value={manutencao.status}
+                onChange={(e) => handleStatusChange(manutencao.id, e.target.value)}
+                disabled={processing === manutencao.id || manutencao.status === "Finalizada"}
               >
-                {processing === manutencao.id ? (
-                  "Processando..."
-                ) : (
-                  <CheckCircle className="w-5 h-5" /> // Ícone de finalizar
-                )}
-              </button>
+                {statusList.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            </td>
+            <td className="p-2 flex space-x-2 justify-center">
+            <button
+              onClick={() => handleStatusChange(manutencao.id, "Finalizada")}
+              disabled={processing === manutencao.id || manutencao.status === "Finalizada"}
+              className="flex items-center justify-center text-green-600 hover:text-green-800"
+            >
+              <CheckCircle size={20} />
+            </button>
               <button
                 className="text-red-500 hover:text-red-700"
                 onClick={() => handleExcluirManutencao(manutencao.id)}

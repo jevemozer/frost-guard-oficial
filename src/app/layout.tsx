@@ -4,7 +4,8 @@ import "./globals.css";
 import { AuthProvider } from '@/lib/contexts/AuthContext'; 
 import { LayoutContent } from '@/components/LayoutContent';
 import { ThemeProvider } from "@/components/theme/ThemeProvider";  
-import { ModeToggle } from "@/components/theme/ModeToggle";  // Importando o ModeToggle
+import { ModeToggle } from "@/components/theme/ModeToggle";  
+import ToastProvider from '@/components/ToastProvider'; // Importando o ToastProvider
 
 export const metadata: Metadata = {
   title: "Frost Guard",
@@ -37,7 +38,8 @@ export default function RootLayout({
                 <ModeToggle /> {/* Botão de alternar tema */}
               </div>
               <LayoutContent>{children}</LayoutContent>
-               </ThemeProvider>
+              <ToastProvider /> {/* Adicionando o ToastProvider */}
+              </ThemeProvider>
         </AuthProvider>
       </body>
     </html>

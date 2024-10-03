@@ -7,9 +7,9 @@ const ToastProvider = () => {
   return (
     <ToastContainer
       position="top-right"
-      autoClose={5000}
+      autoClose={2000}
       hideProgressBar={false}
-      newestOnTop={false}
+      newestOnTop={true}
       closeOnClick
       rtl={false}
       pauseOnFocusLoss

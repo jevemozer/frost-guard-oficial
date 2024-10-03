@@ -173,32 +173,27 @@ const AcompanhamentoManutencao: React.FC = () => {
       setProcessing(null);
     }
   };
+ 
+  const handleExcluirManutencao = async (id: string) => {
+    const confirm = window.confirm("Tem certeza que deseja excluir esta manutenção?");
+    if (confirm) {
+      setProcessing(id); 
+      try {
+        const { error } = await supabase.from("maintenance").delete().eq("id", id);
   
+        if (error) throw error;
   
-  
-
-  const handleExcluirManutencao = useCallback(
-    async (id: string) => {
-      const confirm = window.confirm("Tem certeza que deseja excluir esta manutenção?");
-      if (confirm) {
-        setProcessing(id); 
-        try {
-          const { error } = await supabase.from("maintenance").delete().eq("id", id);
-
-          if (error) throw error;
-
-          setManutencoes((prev) => prev.filter((m) => m.id !== id));
-          toast.success("Manutenção excluída com sucesso!");
-        } catch (error) {
-          console.error("Erro ao excluir a manutenção:", error);
-          toast.error("Erro ao excluir a manutenção.");
-        } finally {
-          setProcessing(null);
-        }
+        setManutencoes((prev) => prev.filter((m) => m.id !== id));
+        toast.success("Manutenção excluída com sucesso!");
+      } catch (error) {
+        console.error("Erro ao excluir a manutenção:", error);
+        toast.error("Erro ao excluir a manutenção.");
+      } finally {
+        setProcessing(null);
       }
-    },
-    [setManutencoes]
-  );
+    }
+  };
+  
 
   if (loading) return <p>Carregando...</p>;
   if (error) return <p>{error}</p>;
@@ -236,33 +231,35 @@ const AcompanhamentoManutencao: React.FC = () => {
             <td className="p-2">{manutencao.maintenance_type_id?.nome || "Sem tipo"}</td>
             <td className="p-2">
             <select
-                value={manutencao.status}
-                onChange={(e) => handleStatusChange(manutencao.id, e.target.value)}
-                disabled={processing === manutencao.id || manutencao.status === "Finalizada"}
-              >
-                {statusList.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
+            className=" p-2 rounded-lg"
+            value={manutencao.status}
+            onChange={(e) => handleStatusChange(manutencao.id, e.target.value)}
+          >
+            {statusList.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
+
             </td>
-            <td className="p-2 flex space-x-2 justify-center">
-            <button
-              onClick={() => handleStatusChange(manutencao.id, "Finalizada")}
-              disabled={processing === manutencao.id || manutencao.status === "Finalizada"}
-              className="flex items-center justify-center text-green-600 hover:text-green-800"
-            >
-              <CheckCircle size={20} />
-            </button>
+            <td className="p-2 flex justify-center space-x-2">
               <button
-                className="text-red-500 hover:text-red-700"
                 onClick={() => handleExcluirManutencao(manutencao.id)}
                 disabled={processing === manutencao.id}
+                className={`text-red-600 hover:text-red-800 transition duration-300 ${processing === manutencao.id ? "opacity-50" : ""}`}
               >
-                <Trash className="w-5 h-5" />
+                <Trash size={18} />
+              </button>
+              <button
+                onClick={() => handleStatusChange(manutencao.id, "Finalizada")}
+                disabled={processing === manutencao.id}
+                className={`text-green-600 hover:text-green-800 transition duration-300 ${processing === manutencao.id ? "opacity-50" : ""}`}
+              >
+                <CheckCircle size={18} />
               </button>
             </td>
+
           </tr>
         ))}
       </tbody>

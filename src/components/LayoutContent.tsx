@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'; // Importando usePathname
 import Sidebar from '@/components/sidebar/Sidebar'; // Importação correta para exportação padrão
 
 // Páginas onde o sidebar deve aparecer
-const pagesWithSidebar = ["/home", "/dashboard", "/maintenance", "/financeiro", "/cadastros", "/relatorios", "/configuracoes"];
+const pagesWithSidebar = ["/", "/maintenance", "/financeiro", "/cadastros", "/relatorios", "/configuracoes"];
 
 export const LayoutContent = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth(); // Obtendo o usuário logado

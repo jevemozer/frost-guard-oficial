@@ -3,7 +3,8 @@ import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR"; // Para formatar a data em português
 import { toast } from "react-toastify"; // Opcional: para exibir notificações
-import { CheckCircle, Trash } from "lucide-react"; // Importando ícones
+import { CheckCircle, Pencil, Trash } from "lucide-react"; // Importando ícones
+import EditManutencaoModal from "./EditManutencaomodal";
 
 const statusList = [
   "Em tratativa",
@@ -193,78 +194,121 @@ const AcompanhamentoManutencao: React.FC = () => {
       }
     }
   };
-  
+
+  const [selectedManutencao, setSelectedManutencao] = useState<Manutencao | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const handleEditManutencao = (manutencao: Manutencao) => {
+    setSelectedManutencao(manutencao);
+    setIsEditModalOpen(true); // Abre o modal
+  };
+
 
   if (loading) return <p>Carregando...</p>;
   if (error) return <p>{error}</p>;
 
   return (
-    <table className="min-w-full border border-border text-primary text-center">
-      <thead>
-        <tr className="bg-emerald-100 dark:bg-emerald-600">
-          <th className="p-2">Data do Problema</th>
-          <th className="p-2">Equipamento</th>
-          <th className="p-2">Motorista</th>
-          <th className="p-2">Carreta</th>
-          <th className="p-2">Cidade</th>
-          <th className="p-2">Diagnóstico</th>
-          <th className="p-2">Grupo de Problema</th>
-          <th className="p-2">Oficina</th>
-          <th className="p-2">Tipo de Manutenção</th>
-          <th className="p-2">Status</th>
-          <th className="p-2">Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        {manutencoes.map((manutencao) => (
-          <tr key={manutencao.id} className="border-t border-border">
-            <td className="p-2">
-              {format(new Date(manutencao.data_problema), "dd/MM/yyyy", { locale: ptBR })}
-            </td>
-            <td className="p-2">{manutencao.equipment_id.frota}</td>
-            <td className="p-2">{manutencao.driver}</td>
-            <td className="p-2">{manutencao.carreta}</td>
-            <td className="p-2">{manutencao.city_id?.name || "-"}</td>
-            <td className="p-2">{manutencao.diagnostic}</td>
-            <td className="p-2">{manutencao.problem_group_id?.nome || "-"}</td>
-            <td className="p-2">{manutencao.workshop_id?.razao_social || "-"}</td>
-            <td className="p-2">{manutencao.maintenance_type_id?.nome || "-"}</td>
-            <td className="p-2">
-            <select
-            className=" p-2 rounded-lg"
-            value={manutencao.status}
-            onChange={(e) => handleStatusChange(manutencao.id, e.target.value)}
-          >
-            {statusList.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </select>
-
-            </td>
-            <td className="p-2 flex justify-items-center space-x-2">
-              <button
-                onClick={() => handleExcluirManutencao(manutencao.id)}
-                disabled={processing === manutencao.id}
-                className={`text-red-600 hover:text-red-800 transition duration-300 ${processing === manutencao.id ? "opacity-50" : ""}`}
-              >
-                <Trash size={18} />
-              </button>
-              <button
-                onClick={() => handleStatusChange(manutencao.id, "Finalizada")}
-                disabled={processing === manutencao.id}
-                className={`text-green-600 hover:text-green-800 transition duration-300 ${processing === manutencao.id ? "opacity-50" : ""}`}
-              >
-                <CheckCircle size={18} />
-              </button>
-            </td>
-
+  <>
+      <table className="min-w-full border border-border text-primary text-center">
+        <thead>
+          <tr className="bg-emerald-100 dark:bg-emerald-600">
+            <th className="p-2">Data do Problema</th>
+            <th className="p-2">Equipamento</th>
+            <th className="p-2">Motorista</th>
+            <th className="p-2">Carreta</th>
+            <th className="p-2">Cidade</th>
+            <th className="p-2">Diagnóstico</th>
+            <th className="p-2">Grupo de Problema</th>
+            <th className="p-2">Oficina</th>
+            <th className="p-2">Tipo de Manutenção</th>
+            <th className="p-2">Status</th>
+            <th className="p-2">Ações</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {manutencoes.map((manutencao) => (
+            <tr key={manutencao.id} className="border-t border-border">
+              <td className="p-2">
+                {format(new Date(manutencao.data_problema), "dd/MM/yyyy", { locale: ptBR })}
+              </td>
+              <td className="p-2">{manutencao.equipment_id.frota}</td>
+              <td className="p-2">{manutencao.driver}</td>
+              <td className="p-2">{manutencao.carreta}</td>
+              <td className="p-2">{manutencao.city_id?.name || "-"}</td>
+              <td className="p-2">{manutencao.diagnostic}</td>
+              <td className="p-2">{manutencao.problem_group_id?.nome || "-"}</td>
+              <td className="p-2">{manutencao.workshop_id?.razao_social || "-"}</td>
+              <td className="p-2">{manutencao.maintenance_type_id?.nome || "-"}</td>
+              <td className="p-2">
+                <select
+                  className=" p-2 rounded-lg"
+                  value={manutencao.status}
+                  onChange={(e) => handleStatusChange(manutencao.id, e.target.value)}
+                  >
+                  {statusList.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+
+              </td>
+              
+              <td className="p-2 flex justify-center gap-2">
+                <div className="relative group">
+                  <button
+                    onClick={() => handleEditManutencao(manutencao)}
+                    className="bg-blue-500 text-white p-1 rounded hover:bg-blue-600"
+                  >
+                    <Pencil className="inline-block w-4 h-4" />
+                  </button>
+                  <span className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-max hidden group-hover:block bg-primary-foreground text-primary text-xs rounded p-1">
+                    Editar
+                  </span>
+                </div>
+                
+                <div className="relative group">
+                  <button
+                    onClick={() => handleStatusChange(manutencao.id, "Finalizada")}
+                    disabled={processing === manutencao.id}
+                    className="bg-green-500 text-white p-1 rounded hover:bg-green-600"
+                  >
+                    <CheckCircle className="inline-block w-4 h-4" />
+                  </button>
+                  <span className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-max hidden group-hover:block bg-primary-foreground text-primary  text-xs rounded p-1">
+                    Finalizar
+                  </span>
+                </div>
+
+                <div className="relative group">
+                  <button
+                    onClick={() => handleExcluirManutencao(manutencao.id)}
+                    disabled={processing === manutencao.id}
+                    className="bg-red-500 text-white p-1 rounded hover:bg-red-600"
+                  >
+                    <Trash className="inline-block w-4 h-4" />
+                  </button>
+                  <span className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 w-max hidden group-hover:block bg-primary-foreground text-primary  text-xs rounded p-1">
+                    Excluir
+                  </span>
+                </div>
+              </td>
+
+
+
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {isEditModalOpen && selectedManutencao && (
+        <EditManutencaoModal
+          manutencao={selectedManutencao}
+          onClose={() => setIsEditModalOpen(false)}
+        />
+      )}
+    </>
   );
-};
+}
 
 export default AcompanhamentoManutencao;

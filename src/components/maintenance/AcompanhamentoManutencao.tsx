@@ -224,11 +224,11 @@ const AcompanhamentoManutencao: React.FC = () => {
             <td className="p-2">{manutencao.equipment_id.frota}</td>
             <td className="p-2">{manutencao.driver_id.nome}</td>
             <td className="p-2">{manutencao.carreta}</td>
-            <td className="p-2">{manutencao.city_id.name}</td>
-            <td className="p-2">{manutencao.diagnostic_id?.descricao || "Sem diagnóstico"}</td>
-            <td className="p-2">{manutencao.problem_group_id?.nome || "Sem grupo"}</td>
-            <td className="p-2">{manutencao.workshop_id?.razao_social || "Sem oficina"}</td>
-            <td className="p-2">{manutencao.maintenance_type_id?.nome || "Sem tipo"}</td>
+            <td className="p-2">{manutencao.city_id?.name || "-"}</td>
+            <td className="p-2">{manutencao.diagnostic_id?.descricao || "-"}</td>
+            <td className="p-2">{manutencao.problem_group_id?.nome || "-"}</td>
+            <td className="p-2">{manutencao.workshop_id?.razao_social || "-"}</td>
+            <td className="p-2">{manutencao.maintenance_type_id?.nome || "-"}</td>
             <td className="p-2">
             <select
             className=" p-2 rounded-lg"

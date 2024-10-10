@@ -5,6 +5,7 @@ import ptBR from 'date-fns/locale/pt-BR'; // Para formatar a data em português
 import { toast } from 'react-toastify'; // Opcional: para exibir notificações
 import { CheckCircle, Pencil, Trash } from 'lucide-react'; // Importando ícones
 import EditManutencaoModal from './EditManutencaomodal';
+import ManutencaoModal from './ManutencaoModal';
 
 const statusList = [
   'Em tratativa',
@@ -215,10 +216,16 @@ const AcompanhamentoManutencao: React.FC = () => {
   const [selectedManutencao, setSelectedManutencao] =
     useState<Manutencao | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false); // Adicionando estado para o modal
 
   const handleEditManutencao = (manutencao: Manutencao) => {
     setSelectedManutencao(manutencao);
-    setIsEditModalOpen(true); // Abre o modal
+    setIsEditModalOpen(true); // Abre o modal de edição
+  };
+
+  const handleRowClick = (manutencao: Manutencao) => {
+    setSelectedManutencao(manutencao);
+    setIsModalOpen(true); // Abre o modal de visualização
   };
 
   if (loading) return <p>Carregando...</p>;
@@ -228,23 +235,27 @@ const AcompanhamentoManutencao: React.FC = () => {
     <>
       <table className="min-w-full border border-border text-primary text-center">
         <thead>
-          <tr className="bg-emerald-100 dark:bg-emerald-600">
-            <th className="p-2">Data do Problema</th>
-            <th className="p-2">Equipamento</th>
-            <th className="p-2">Motorista</th>
-            <th className="p-2">Carreta</th>
-            <th className="p-2">Cidade</th>
-            <th className="p-2">Diagnóstico</th>
-            <th className="p-2">Grupo de Problema</th>
-            <th className="p-2">Oficina</th>
-            <th className="p-2">Tipo de Manutenção</th>
-            <th className="p-2">Status</th>
-            <th className="p-2">Ações</th>
+          <tr className="bg-emerald-200">
+            <th className="p-3">Data do Problema</th>
+            <th className="p-3">Equipamento</th>
+            <th className="p-3">Motorista</th>
+            <th className="p-3">Carreta</th>
+            <th className="p-3">Cidade</th>
+            <th className="p-3">Diagnóstico</th>
+            <th className="p-3">Grupo de Problema</th>
+            <th className="p-3">Oficina</th>
+            <th className="p-3">Tipo de Manutenção</th>
+            <th className="p-3">Status</th>
+            <th className="p-3">Ações</th>
           </tr>
         </thead>
         <tbody>
           {manutencoes.map((manutencao) => (
-            <tr key={manutencao.id} className="border-t border-border">
+            <tr
+              key={manutencao.id}
+              className="hover:bg-gray-100 transition"
+              onDoubleClick={() => handleRowClick(manutencao)}
+            >
               <td className="p-2">
                 {format(new Date(manutencao.data_problema), 'dd/MM/yyyy', {
                   locale: ptBR,
@@ -325,6 +336,12 @@ const AcompanhamentoManutencao: React.FC = () => {
           ))}
         </tbody>
       </table>
+
+      <ManutencaoModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        manutencao={selectedManutencao}
+      />
 
       {isEditModalOpen && selectedManutencao && (
         <EditManutencaoModal

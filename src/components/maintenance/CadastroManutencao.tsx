@@ -60,7 +60,6 @@ const CadastroManutencao = () => {
     if (!equipment_id) {
       setError('equipment_id', {
         type: 'manual',
-        message: 'O equipamento é obrigatório',
       });
     } else {
       clearErrors('equipment_id');

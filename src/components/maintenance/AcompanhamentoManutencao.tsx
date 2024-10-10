@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { supabase } from '@/lib/supabase';
 import { format } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR'; // Para formatar a data em português
@@ -6,6 +6,7 @@ import { toast } from 'react-toastify'; // Opcional: para exibir notificações
 import { CheckCircle, Pencil, Trash } from 'lucide-react'; // Importando ícones
 import EditManutencaoModal from './EditManutencaomodal';
 import ManutencaoModal from './ManutencaoModal';
+import { AuthContext } from '@/lib/contexts/AuthContext';
 
 const statusList = [
   'Em tratativa',
@@ -48,7 +49,8 @@ const AcompanhamentoManutencao: React.FC = () => {
           status, 
           observation, 
           city_id (name), 
-          equipment_id (frota), 
+          equipment_id (frota),
+          created_by:profile (full_name), 
           driver, 
           diagnostic, 
           problem_group_id (nome), 
@@ -68,6 +70,7 @@ const AcompanhamentoManutencao: React.FC = () => {
     }
   };
 
+  const { user } = useContext(AuthContext);
   // Efeito para buscar as manutenções inicialmente
   useEffect(() => {
     fetchManutencoes();
@@ -164,6 +167,7 @@ const AcompanhamentoManutencao: React.FC = () => {
           status: 'Pendente',
           custo: 0,
           created_at: new Date().toISOString(),
+          created_by: user?.id,
         });
 
         toast.success('Manutenção finalizada e registrada no financeiro.');
@@ -228,6 +232,27 @@ const AcompanhamentoManutencao: React.FC = () => {
     setIsModalOpen(true); // Abre o modal de visualização
   };
 
+  const formatName = (
+    name: string | undefined,
+    capitalizeWords: boolean = false,
+  ) => {
+    if (!name) return ''; // Verificação condicional
+
+    if (capitalizeWords) {
+      return name
+        .split(' ')
+        .map(
+          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+        )
+        .join(' ');
+    } else {
+      const [firstName, lastName] = name.split(' ');
+      return `${firstName.charAt(0).toUpperCase() + firstName.slice(1)} ${
+        lastName?.charAt(0)?.toUpperCase() + lastName?.slice(1) // Uso de optional chaining
+      }`;
+    }
+  };
+
   if (loading) return <p>Carregando...</p>;
   if (error) return <p>{error}</p>;
 
@@ -262,15 +287,15 @@ const AcompanhamentoManutencao: React.FC = () => {
                 })}
               </td>
               <td className="p-2">{manutencao.equipment_id.frota}</td>
-              <td className="p-2">{manutencao.driver}</td>
+              <td className="p-2">{formatName(manutencao.driver)}</td>
               <td className="p-2">{manutencao.carreta}</td>
               <td className="p-2">{manutencao.city_id?.name || '-'}</td>
               <td className="p-2">{manutencao.diagnostic}</td>
               <td className="p-2">
                 {manutencao.problem_group_id?.nome || '-'}
               </td>
-              <td className="p-2">
-                {manutencao.workshop_id?.razao_social || '-'}
+              <td className="p-3">
+                {formatName(manutencao.workshop_id?.razao_social, true)}
               </td>
               <td className="p-2">
                 {manutencao.maintenance_type_id?.nome || '-'}

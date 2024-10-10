@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
@@ -9,16 +9,24 @@ type AuthContextType = {
   session: Session | null;
 };
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Exportando o AuthContext
+export const AuthContext = createContext<AuthContextType | undefined>(
+  undefined,
+);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
     const setData = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
         if (error) throw error;
         setSession(session);
         setUser(session?.user ?? null);
@@ -40,7 +48,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     // Escuta mudanças na autenticação e atualiza o estado
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
 

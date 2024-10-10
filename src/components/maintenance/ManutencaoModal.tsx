@@ -5,9 +5,9 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogFooter,
   DialogTitle,
-} from '@/components/ui/dialog'; // Usando Dialog do Radix UI
+} from '@/components/ui/dialog';
+import { format } from 'date-fns'; // Importando a função de formatação de data
 
 interface Manutencao {
   id: string;
@@ -17,11 +17,12 @@ interface Manutencao {
   observation: string;
   city_id: { name: string };
   equipment_id: { frota: string };
-  driver: string;
+  driver: string; // Pode ser uma string, mas vamos formatar
   diagnostic: string;
   problem_group_id?: { nome: string };
   workshop_id?: { razao_social: string };
   maintenance_type_id?: { nome: string };
+  created_by?: { full_name: string };
 }
 
 interface ManutencaoModalProps {
@@ -30,6 +31,25 @@ interface ManutencaoModalProps {
   manutencao: Manutencao | null;
 }
 
+const formatName = (
+  name: string | undefined,
+  capitalizeWords: boolean = false,
+) => {
+  if (!name) return ''; // Verificação condicional
+
+  if (capitalizeWords) {
+    return name
+      .split(' ')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  } else {
+    const [firstName, lastName] = name.split(' ');
+    return `${firstName.charAt(0).toUpperCase() + firstName.slice(1)} ${
+      lastName?.charAt(0)?.toUpperCase() + lastName?.slice(1) // Uso de optional chaining
+    }`;
+  }
+};
+
 const ManutencaoModal: React.FC<ManutencaoModalProps> = ({
   isOpen,
   onClose,
@@ -37,54 +57,69 @@ const ManutencaoModal: React.FC<ManutencaoModalProps> = ({
 }) => {
   if (!manutencao) return null;
 
+  // Formatando a data do problema
+  const formattedDate = format(
+    new Date(manutencao.data_problema),
+    'dd/MM/yyyy',
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="max-w-lg mx-auto bg-white rounded-lg shadow-lg p-6">
         <DialogHeader>
-          <DialogTitle>Detalhes da Manutenção</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-gray-800">
+            Detalhes da Manutenção
+          </DialogTitle>
         </DialogHeader>
-        <div>
-          <p>
-            <strong>Data do Problema:</strong> {manutencao.data_problema}
-          </p>
-          <p>
-            <strong>Equipamento:</strong> {manutencao.equipment_id.frota}
-          </p>
-          <p>
-            <strong>Motorista:</strong> {manutencao.driver}
-          </p>
-          <p>
-            <strong>Carreta:</strong> {manutencao.carreta}
-          </p>
-          <p>
-            <strong>Cidade:</strong> {manutencao.city_id.name}
-          </p>
-          <p>
-            <strong>Diagnóstico:</strong> {manutencao.diagnostic}
-          </p>
-          <p>
-            <strong>Grupo de Problema:</strong>{' '}
-            {manutencao.problem_group_id?.nome}
-          </p>
-          <p>
-            <strong>Oficina:</strong> {manutencao.workshop_id?.razao_social}
-          </p>
-          <p>
-            <strong>Tipo de Manutenção:</strong>{' '}
-            {manutencao.maintenance_type_id?.nome}
-          </p>
-          <p>
-            <strong>Status:</strong> {manutencao.status}
-          </p>
-          <p>
-            <strong>Observação:</strong> {manutencao.observation}
-          </p>
+        <div className="mt-4">
+          <ul className="space-y-3">
+            <li>
+              <strong>Data do Problema:</strong> <span>{formattedDate}</span>
+            </li>
+            <li>
+              <strong>Equipamento:</strong>{' '}
+              <span>{manutencao.equipment_id.frota}</span>
+            </li>
+            <li>
+              <strong>Motorista:</strong>{' '}
+              <span>{formatName(manutencao.driver)}</span>
+            </li>
+            <li>
+              <strong>Carreta:</strong> <span>{manutencao.carreta}</span>
+            </li>
+            <li>
+              <strong>Cidade:</strong> <span>{manutencao.city_id.name}</span>
+            </li>
+            <li>
+              <strong>Diagnóstico:</strong> <span>{manutencao.diagnostic}</span>
+            </li>
+            <li>
+              <strong>Grupo de Problema:</strong>{' '}
+              <span>{manutencao.problem_group_id?.nome || 'N/A'}</span>
+            </li>
+            <li>
+              <strong>Oficina:</strong>{' '}
+              <span>
+                {formatName(manutencao.workshop_id?.razao_social, true)}
+              </span>
+            </li>
+            <li>
+              <strong>Tipo de Manutenção:</strong>{' '}
+              <span>{manutencao.maintenance_type_id?.nome || 'N/A'}</span>
+            </li>
+            <li>
+              <strong>Status:</strong> <span>{manutencao.status}</span>
+            </li>
+            <li>
+              <strong>Observação:</strong>{' '}
+              <span>{manutencao.observation || 'N/A'}</span>
+            </li>
+            <li>
+              <strong>Cadastrado Por:</strong>{' '}
+              <span>{manutencao.created_by?.full_name || 'N/A'}</span>
+            </li>
+          </ul>
         </div>
-        <DialogFooter>
-          <button onClick={onClose} className="btn">
-            Fechar
-          </button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

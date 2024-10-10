@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/lib/supabase';
 import Select from 'react-select';
 import { toast } from 'react-toastify';
+import { AuthContext } from '@/lib/contexts/AuthContext'; // Importa o contexto de autenticação
 
 type MaintenanceFormValues = {
   data_problema: string;
@@ -55,6 +56,8 @@ const CadastroManutencao = () => {
   } = useForm<MaintenanceFormValues>();
 
   const equipment_id = watch('equipment_id');
+
+  const { user } = useContext(AuthContext); // Obtém o usuário do contexto de autenticação
 
   useEffect(() => {
     if (!equipment_id) {
@@ -117,9 +120,10 @@ const CadastroManutencao = () => {
     setIsSubmitting(true); // Começa o loading
 
     try {
+      // Incluindo o usuário que cadastrou a manutenção
       const { data: insertData, error } = await supabase
         .from('maintenance')
-        .insert([filteredData]);
+        .insert([{ ...filteredData, created_by: user?.id }]); // Adiciona o ID do usuário
 
       if (error) {
         console.error('Erro ao cadastrar manutenção:', error);
@@ -265,7 +269,7 @@ const CadastroManutencao = () => {
               placeholder="Descreva o diagnóstico"
             />
             {errors.diagnostic && (
-              <span className="text-red-600">{errors.diagnostic?.message}</span>
+              <span className="text-red-600">{errors.diagnostic.message}</span>
             )}
           </div>
 

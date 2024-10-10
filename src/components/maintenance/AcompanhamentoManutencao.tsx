@@ -21,8 +21,8 @@ interface Manutencao {
   observation: string;
   city_id: { name: string };
   equipment_id: { frota: string };
-  driver_id: { nome: string };
-  diagnostic_id?: { descricao: string };
+  driver: string ;
+  diagnostic: string ;
   problem_group_id?: { nome: string };
   workshop_id?: { razao_social: string };
   maintenance_type_id?: { nome: string };
@@ -47,8 +47,8 @@ const AcompanhamentoManutencao: React.FC = () => {
           observation, 
           city_id (name), 
           equipment_id (frota), 
-          driver_id (nome), 
-          diagnostic_id (descricao), 
+          driver, 
+          diagnostic, 
           problem_group_id (nome), 
           workshop_id (razao_social), 
           maintenance_type_id (nome)
@@ -126,8 +126,8 @@ const AcompanhamentoManutencao: React.FC = () => {
         !manutencao?.carreta ||
         !manutencao?.city_id?.name ||
         !manutencao?.equipment_id?.frota ||
-        !manutencao?.driver_id?.nome ||
-        !manutencao?.diagnostic_id?.descricao ||
+        !manutencao?.driver ||
+        !manutencao?.diagnostic ||
         !manutencao?.problem_group_id?.nome ||
         !manutencao?.workshop_id?.razao_social
       ) {
@@ -222,10 +222,10 @@ const AcompanhamentoManutencao: React.FC = () => {
               {format(new Date(manutencao.data_problema), "dd/MM/yyyy", { locale: ptBR })}
             </td>
             <td className="p-2">{manutencao.equipment_id.frota}</td>
-            <td className="p-2">{manutencao.driver_id.nome}</td>
+            <td className="p-2">{manutencao.driver}</td>
             <td className="p-2">{manutencao.carreta}</td>
             <td className="p-2">{manutencao.city_id?.name || "-"}</td>
-            <td className="p-2">{manutencao.diagnostic_id?.descricao || "-"}</td>
+            <td className="p-2">{manutencao.diagnostic}</td>
             <td className="p-2">{manutencao.problem_group_id?.nome || "-"}</td>
             <td className="p-2">{manutencao.workshop_id?.razao_social || "-"}</td>
             <td className="p-2">{manutencao.maintenance_type_id?.nome || "-"}</td>

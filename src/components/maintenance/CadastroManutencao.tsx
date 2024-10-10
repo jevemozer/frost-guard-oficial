@@ -22,7 +22,7 @@ type MaintenanceFormValues = {
   carreta: string;
   driver: string;
   city_id: number;
-  diagnostic?: string;
+  diagnostic: string; // Alterado para obrigatório
 };
 
 type Equipment = {
@@ -41,6 +41,7 @@ const CadastroManutencao = () => {
   const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(false);
   const [cityInput, setCityInput] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false); // Novo estado para controle de loading
 
   const {
     register,
@@ -109,10 +110,17 @@ const CadastroManutencao = () => {
   }, [cityInput]);
 
   const onSubmit = async (data: MaintenanceFormValues) => {
+    // Filtrando campos vazios
+    const filteredData = Object.fromEntries(
+      Object.entries(data).filter(([_, v]) => v !== '' && v !== 0),
+    );
+
+    setIsSubmitting(true); // Começa o loading
+
     try {
       const { data: insertData, error } = await supabase
         .from('maintenance')
-        .insert([data]);
+        .insert([filteredData]);
 
       if (error) {
         console.error('Erro ao cadastrar manutenção:', error);
@@ -125,12 +133,14 @@ const CadastroManutencao = () => {
     } catch (error: any) {
       console.error('Erro inesperado:', error);
       toast.error('Erro inesperado: ' + error.message);
+    } finally {
+      setIsSubmitting(false); // Para o loading
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent>
+    <Dialog open={open} onOpenChange={setOpen} className="animate-fade-in">
+      <DialogContent className="animate-fade-in-down">
         <DialogHeader>
           <DialogTitle>Cadastrar Nova Manutenção</DialogTitle>
           <DialogDescription>
@@ -181,7 +191,15 @@ const CadastroManutencao = () => {
             <Input
               type="text"
               id="carreta"
-              {...register('carreta', { required: 'A carreta é obrigatória' })}
+              placeholder="Insira o número da carreta" // Adicionando placeholder
+              {...register('carreta', {
+                required: 'A carreta é obrigatória',
+                pattern: {
+                  value: /^[0-9]{1,4}$/, // Regex para até 4 dígitos numéricos
+                  message:
+                    'A carreta deve conter apenas números e ter no máximo 4 dígitos',
+                },
+              })}
             />
             {errors.carreta && (
               <span className="text-red-600">{errors.carreta.message}</span>
@@ -193,8 +211,14 @@ const CadastroManutencao = () => {
             <Input
               type="text"
               id="driver"
+              placeholder="Nome do motorista" // Adicionando placeholder
               {...register('driver', {
                 required: 'O nome do motorista é obrigatório',
+                pattern: {
+                  value: /^[A-Za-z\s]+$/, // Regex para validar apenas letras e espaços
+                  message:
+                    'O nome do motorista deve conter apenas letras e espaços',
+                },
               })}
             />
             {errors.driver && (
@@ -229,6 +253,15 @@ const CadastroManutencao = () => {
               id="diagnostic"
               {...register('diagnostic', {
                 required: 'O diagnóstico é obrigatório',
+                maxLength: {
+                  value: 30,
+                  message: 'O diagnóstico deve ter no máximo 30 caracteres',
+                },
+                pattern: {
+                  value: /^[A-Za-z0-9\s]+$/, // Regex para permitir letras, números e espaços
+                  message:
+                    'O diagnóstico deve conter apenas letras, números e espaços',
+                },
               })}
               placeholder="Descreva o diagnóstico"
             />
@@ -240,8 +273,9 @@ const CadastroManutencao = () => {
           <Button
             className="text-primary text-lg font-bold bg-primary-foreground"
             type="submit"
+            disabled={isSubmitting} // Desativa o botão durante o envio
           >
-            Cadastrar Manutenção
+            {isSubmitting ? 'Cadastrando...' : 'Cadastrar Manutenção'}
           </Button>
         </form>
       </DialogContent>

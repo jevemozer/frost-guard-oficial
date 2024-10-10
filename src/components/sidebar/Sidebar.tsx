@@ -70,10 +70,10 @@ const Sidebar = () => {
       <aside
         className={`${
           isOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0 transform transition-transform fixed lg:static top-0 left-0 w-64 h-screen bg-primary-foreground text-primary p-4 flex flex-col justify-between z-50 shadow-lg`}
+        } lg:translate-x-0 transform transition-transform fixed lg:static top-0 left-0 min-w-48 h-screen bg-primary-foreground text-primary p-4 flex flex-col justify-between z-50 shadow-lg`}
       >
         <div>
-          <div className="flex flex-col items-center justify-center p-4">
+          <div className="flex flex-col items-center justify-center p-6">
             {avatarUrl ? (
               <Avatar className="w-16 h-16">
                 <Image
@@ -96,10 +96,10 @@ const Sidebar = () => {
 
           <Separator className="my-6 border-primary-foreground" />
 
-          <nav className="mt-4">
+          <nav className="text-wrap">
             <ul>
-              <li className="py-4 hover:bg-emerald-400 rounded">
-                <Link href="/dashboard">
+              <li className="py-4 hover:bg-emerald-400">
+                <Link href="/">
                   <Home className="inline mr-2" />
                   Dashboard
                 </Link>
@@ -131,7 +131,7 @@ const Sidebar = () => {
               <li className="py-4 hover:bg-emerald-400 rounded mt-auto">
                 <Link href="/configuracoes">
                   <Settings className="inline mr-2" />
-                  Configurações Gerais
+                  Configurações
                 </Link>
               </li>
             </ul>

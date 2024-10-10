@@ -1,25 +1,36 @@
+// src/app/maintenance/page.tsx
+
 'use client';
-
+import { ProtectedRoute } from '@/lib/protectedRoute';
 import { useState } from 'react';
-import AddMaintenanceModal from '@/components/maintenance/AddMaintenanceModal';
-import MaintenanceGrid from '@/components/maintenance/MaintenanceGrid';
+import { Button } from '@/components/ui/button';
+import CadastroManutencao from '@/components/maintenance/CadastroManutencao';
+import AcompanhamentoManutencao from '@/components/maintenance/AcompanhamentoManutencao';
 
-export default function ManutencoesPage() {
-  const [refresh, setRefresh] = useState(false);
+export default function Maintenance() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Função para atualizar a grid após cadastrar ou concluir manutenção
-  const handleRefresh = () => {
-    setRefresh(!refresh);
-  };
+  // Função para abrir e fechar o modal
+  const toggleModal = () => setIsModalOpen(!isModalOpen);
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-bold">Manutenções</h1>
-        <AddMaintenanceModal onAdd={handleRefresh} />
-      </div>
+    <ProtectedRoute>
+      <div className="p-4">
+        <div className="flex justify-between items-center mb-4">
+          <Button
+            className="text-primary text-lg font-bold bg-primary-foreground"
+            onClick={toggleModal}
+          >
+            Nova Manutenção
+          </Button>
+        </div>
 
-      <MaintenanceGrid refresh={refresh} />
-    </div>
+        <AcompanhamentoManutencao />
+
+        {isModalOpen && (
+          <CadastroManutencao isOpen={isModalOpen} onClose={toggleModal} />
+        )}
+      </div>
+    </ProtectedRoute>
   );
 }

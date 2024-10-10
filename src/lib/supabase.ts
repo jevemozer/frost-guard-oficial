@@ -4,7 +4,13 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true, // Permite que a sessão seja persistida nos cookies
+    detectSessionInUrl: true, // Detecta a sessão na URL e armazena automaticamente
+  },
+});
 
 // Função para atualizar o status de uma manutenção
 export async function updateMaintenanceStatus(maintenanceId: string, status: string) {

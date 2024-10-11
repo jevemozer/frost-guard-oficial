@@ -3,7 +3,16 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import Image from 'next/image';
 import { Avatar } from '@/components/ui/avatar';
-import { Home, Settings, LogOut, Menu, Calendar, FileText, DollarSign, User } from 'lucide-react';
+import {
+  Home,
+  Settings,
+  LogOut,
+  Menu,
+  Calendar,
+  FileText,
+  DollarSign,
+  User,
+} from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import md5 from 'md5';
@@ -91,7 +100,9 @@ const Sidebar = () => {
                 </span>
               </Avatar>
             )}
-            <span className="mt-2 text-primary text-lg font-bold">{fullName}</span>
+            <span className="mt-2 text-primary text-lg font-bold">
+              {fullName}
+            </span>
           </div>
 
           <Separator className="my-6 border-primary-foreground" />
@@ -105,7 +116,7 @@ const Sidebar = () => {
                 </Link>
               </li>
               <li className="py-4 hover:bg-emerald-400 rounded">
-                <Link href="/maintenance">
+                <Link href="/manutencao">
                   <Calendar className="inline mr-2" />
                   Manutenções
                 </Link>
@@ -139,7 +150,10 @@ const Sidebar = () => {
         </div>
 
         <div className="py-2">
-          <Button onClick={handleLogout} className="w-full text-left flex items-center text-primary bg-primary-foreground hover:bg-emerald-400">
+          <Button
+            onClick={handleLogout}
+            className="w-full text-left flex items-center text-primary bg-primary-foreground hover:bg-emerald-400"
+          >
             <LogOut className="inline mr-2" />
             Sair
           </Button>

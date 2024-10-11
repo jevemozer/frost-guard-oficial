@@ -8,13 +8,6 @@ import EditManutencaoModal from './EditManutencaomodal';
 import ManutencaoModal from './ManutencaoModal';
 import { AuthContext } from '@/lib/contexts/AuthContext';
 
-const statusList = [
-  'Em tratativa',
-  'Enviado para manutenção',
-  'Em manutenção',
-  'Finalizada',
-];
-
 interface Manutencao {
   id: string;
   data_problema: string;
@@ -29,6 +22,13 @@ interface Manutencao {
   workshop_id?: { razao_social: string };
   maintenance_type_id?: { nome: string };
 }
+
+const statusList = [
+  'Em tratativa',
+  'Enviado para manutenção',
+  'Em manutenção',
+  'Finalizada',
+];
 
 const AcompanhamentoManutencao: React.FC = () => {
   const [manutencoes, setManutencoes] = useState<Manutencao[]>([]);
